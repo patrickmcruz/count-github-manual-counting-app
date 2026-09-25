@@ -84,8 +84,12 @@ alteracoes_pendentes = False
 modal_confirmacao_ativo = False
 salvar_ao_finalizar = True
 
+# Modo de Ferramenta: Apontador/Marcador (False) ou Mão/Pan (True)
+modo_mao_ativo = False
+
 # Botões interativos no HUD
 BTN_OPEN_IMAGE = (0, 0, 0, 0)
+BTN_HAND_PAN = (0, 0, 0, 0)
 BTN_ZOOM_IN = (0, 0, 0, 0)
 BTN_ZOOM_OUT = (0, 0, 0, 0)
 BTN_RESET_ZOOM = (0, 0, 0, 0)
@@ -458,6 +462,21 @@ def mover_pan(dx_screen: int, dy_screen: int):
     atualizar_canvas()
 
 
+def alternar_modo_mao():
+    """Alterna entre o Modo Marcador (adicionar pontos) e o Modo Mão (navegação/pan livre sem marcar)."""
+    global modo_mao_ativo, status_mensagem, status_cor
+    modo_mao_ativo = not modo_mao_ativo
+    if modo_mao_ativo:
+        status_mensagem = "Modo Mao ATIVADO: clique e arraste para mover a imagem (pontos bloqueados)"
+        status_cor = (0, 180, 255)
+        print("[*] Ferramenta Mão ativada (clique esquerdo move a câmera sem marcar).")
+    else:
+        status_mensagem = "Modo Marcador ATIVADO: clique na imagem para marcar pessoas"
+        status_cor = (74, 222, 128)
+        print("[*] Ferramenta Marcador ativada (clique esquerdo adiciona pontos).")
+    atualizar_canvas()
+
+
 def salvar_checkpoint(silencioso: bool = False):
     """Salva o progresso atual em disco (checkpoint) sem fechar a aplicação."""
     global status_mensagem, status_cor, alteracoes_pendentes
@@ -503,7 +522,7 @@ def salvar_checkpoint(silencioso: bool = False):
 
 def atualizar_canvas():
     """Renderiza a região visível em alta resolução, projeta os pontos e o HUD."""
-    global img_display, BTN_OPEN_IMAGE, BTN_ZOOM_IN, BTN_ZOOM_OUT, BTN_RESET_ZOOM, BTN_UNDO, BTN_SAVE, BTN_FINISH
+    global img_display, BTN_OPEN_IMAGE, BTN_HAND_PAN, BTN_ZOOM_IN, BTN_ZOOM_OUT, BTN_RESET_ZOOM, BTN_UNDO, BTN_SAVE, BTN_FINISH
     global fit_w, fit_h, offset_x, offset_y, scale_fit
 
     w = screen_w
@@ -629,50 +648,64 @@ def atualizar_canvas():
     )
 
     # Botões interativos à direita:
-    # Botão: Abrir Imagem (O)
-    op_x1, op_y1, op_x2, op_y2 = w - 835, 8, w - 700, 42
+    # 1. Botão: Abrir Imagem (O)
+    op_x1, op_y1, op_x2, op_y2 = w - 970, 8, w - 860, 42
     BTN_OPEN_IMAGE = (op_x1, op_y1, op_x2, op_y2)
     cv2.rectangle(img_display, (op_x1, op_y1), (op_x2, op_y2), (30, 58, 138), -1)
     cv2.rectangle(img_display, (op_x1, op_y1), (op_x2, op_y2), (96, 165, 250), 1)
-    cv2.putText(img_display, "Abrir (O)", (op_x1 + 14, op_y1 + 23), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (255, 255, 255), 1, cv2.LINE_AA)
+    cv2.putText(img_display, "Abrir (O)", (op_x1 + 12, op_y1 + 23), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (255, 255, 255), 1, cv2.LINE_AA)
 
-    # Zoom +
-    z1_x1, z1_y1, z1_x2, z1_y2 = w - 690, 8, w - 645, 42
+    # 2. Botão: Ferramenta Mão / Pan (H)
+    hp_x1, hp_y1, hp_x2, hp_y2 = w - 850, 8, w - 735, 42
+    BTN_HAND_PAN = (hp_x1, hp_y1, hp_x2, hp_y2)
+    if modo_mao_ativo:
+        # Destaque de ferramenta ativa (Âmbar vibrante com borda branca reforçada)
+        cv2.rectangle(img_display, (hp_x1, hp_y1), (hp_x2, hp_y2), (0, 140, 255), -1)
+        cv2.rectangle(img_display, (hp_x1, hp_y1), (hp_x2, hp_y2), (255, 255, 255), 2)
+        cv2.putText(img_display, "Mao ON (H)", (hp_x1 + 8, hp_y1 + 23), cv2.FONT_HERSHEY_SIMPLEX, 0.46, (255, 255, 255), 2, cv2.LINE_AA)
+    else:
+        # Estado inativo (Modo Marcador)
+        cv2.rectangle(img_display, (hp_x1, hp_y1), (hp_x2, hp_y2), (30, 41, 59), -1)
+        cv2.rectangle(img_display, (hp_x1, hp_y1), (hp_x2, hp_y2), (148, 163, 184), 1)
+        cv2.putText(img_display, "Mao (H)", (hp_x1 + 14, hp_y1 + 23), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (226, 232, 240), 1, cv2.LINE_AA)
+
+    # 3. Zoom +
+    z1_x1, z1_y1, z1_x2, z1_y2 = w - 725, 8, w - 685, 42
     BTN_ZOOM_IN = (z1_x1, z1_y1, z1_x2, z1_y2)
     cv2.rectangle(img_display, (z1_x1, z1_y1), (z1_x2, z1_y2), (30, 41, 59), -1)
     cv2.rectangle(img_display, (z1_x1, z1_y1), (z1_x2, z1_y2), (148, 163, 184), 1)
-    cv2.putText(img_display, "+", (z1_x1 + 14, z1_y1 + 24), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2, cv2.LINE_AA)
+    cv2.putText(img_display, "+", (z1_x1 + 12, z1_y1 + 24), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2, cv2.LINE_AA)
 
-    # Zoom -
-    z2_x1, z2_y1, z2_x2, z2_y2 = w - 635, 8, w - 590, 42
+    # 4. Zoom -
+    z2_x1, z2_y1, z2_x2, z2_y2 = w - 675, 8, w - 635, 42
     BTN_ZOOM_OUT = (z2_x1, z2_y1, z2_x2, z2_y2)
     cv2.rectangle(img_display, (z2_x1, z2_y1), (z2_x2, z2_y2), (30, 41, 59), -1)
     cv2.rectangle(img_display, (z2_x1, z2_y1), (z2_x2, z2_y2), (148, 163, 184), 1)
-    cv2.putText(img_display, "-", (z2_x1 + 16, z2_y1 + 22), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2, cv2.LINE_AA)
+    cv2.putText(img_display, "-", (z2_x1 + 14, z2_y1 + 22), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2, cv2.LINE_AA)
 
-    # Reset Zoom (Fit)
-    rz_x1, rz_y1, rz_x2, rz_y2 = w - 580, 8, w - 495, 42
+    # 5. Reset Zoom (Fit)
+    rz_x1, rz_y1, rz_x2, rz_y2 = w - 625, 8, w - 540, 42
     BTN_RESET_ZOOM = (rz_x1, rz_y1, rz_x2, rz_y2)
     cv2.rectangle(img_display, (rz_x1, rz_y1), (rz_x2, rz_y2), (30, 41, 59), -1)
     cv2.rectangle(img_display, (rz_x1, rz_y1), (rz_x2, rz_y2), (148, 163, 184), 1)
     cv2.putText(img_display, "Fit (R)", (rz_x1 + 12, rz_y1 + 23), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (255, 255, 255), 1, cv2.LINE_AA)
 
-    # Desfazer
-    u_x1, u_y1, u_x2, u_y2 = w - 485, 8, w - 365, 42
+    # 6. Desfazer
+    u_x1, u_y1, u_x2, u_y2 = w - 530, 8, w - 410, 42
     BTN_UNDO = (u_x1, u_y1, u_x2, u_y2)
     cv2.rectangle(img_display, (u_x1, u_y1), (u_x2, u_y2), (30, 110, 230), -1)
     cv2.rectangle(img_display, (u_x1, u_y1), (u_x2, u_y2), (255, 255, 255), 1)
     cv2.putText(img_display, "<- Desfazer", (u_x1 + 12, u_y1 + 23), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (255, 255, 255), 1, cv2.LINE_AA)
 
-    # Salvar Checkpoint
-    s_x1, s_y1, s_x2, s_y2 = w - 355, 8, w - 195, 42
+    # 7. Salvar Checkpoint
+    s_x1, s_y1, s_x2, s_y2 = w - 400, 8, w - 245, 42
     BTN_SAVE = (s_x1, s_y1, s_x2, s_y2)
     cv2.rectangle(img_display, (s_x1, s_y1), (s_x2, s_y2), (180, 105, 14), -1)
     cv2.rectangle(img_display, (s_x1, s_y1), (s_x2, s_y2), (255, 255, 255), 1)
     cv2.putText(img_display, "Salvar (Ctrl+S)", (s_x1 + 10, s_y1 + 23), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (255, 255, 255), 1, cv2.LINE_AA)
 
-    # Finalizar
-    f_x1, f_y1, f_x2, f_y2 = w - 185, 8, w - 15, 42
+    # 8. Finalizar
+    f_x1, f_y1, f_x2, f_y2 = w - 235, 8, w - 65, 42
     BTN_FINISH = (f_x1, f_y1, f_x2, f_y2)
     cv2.rectangle(img_display, (f_x1, f_y1), (f_x2, f_y2), (40, 150, 60), -1)
     cv2.rectangle(img_display, (f_x1, f_y1), (f_x2, f_y2), (255, 255, 255), 1)
@@ -838,8 +871,9 @@ def callback_mouse(event, x, y, flags, param):
     """Manipula eventos do mouse: Zoom por scroll, Pan por arraste e marcação de pontos."""
     global coordenadas, deve_encerrar, status_mensagem, status_cor
     global is_dragging_pan, pan_start_screen, pan_start_center, center_x, center_y
-    global modal_confirmacao_ativo, alteracoes_pendentes
+    global modal_confirmacao_ativo, alteracoes_pendentes, modo_mao_ativo
     global BTN_MODAL_CONFIRMAR_SALVAR, BTN_MODAL_SAIR_SEM_SALVAR, BTN_MODAL_CANCELAR
+    global BTN_OPEN_IMAGE, BTN_HAND_PAN, BTN_ZOOM_IN, BTN_ZOOM_OUT, BTN_RESET_ZOOM, BTN_UNDO, BTN_SAVE, BTN_FINISH
 
     # Se o modal de confirmação estiver ativo, intercepta cliques exclusivamente no modal
     if modal_confirmacao_ativo:
@@ -867,8 +901,8 @@ def callback_mouse(event, x, y, flags, param):
             aplicar_zoom(1.0 / 1.35, x, y)
         return
 
-    # 2. Iniciar Pan (Botão do Meio ou Segurar Espaço + Botão Esquerdo)
-    if event == cv2.EVENT_MBUTTONDOWN or (event == cv2.EVENT_LBUTTONDOWN and space_is_pressed):
+    # 2. Iniciar Pan (Botão do Meio ou Segurar Espaço + Botão Esquerdo ou Modo Mão no Botão Esquerdo)
+    if event == cv2.EVENT_MBUTTONDOWN or (event == cv2.EVENT_LBUTTONDOWN and (space_is_pressed or (modo_mao_ativo and y > HUD_HEIGHT))):
         is_dragging_pan = True
         pan_start_screen = (x, y)
         pan_start_center = (center_x, center_y)
@@ -899,6 +933,9 @@ def callback_mouse(event, x, y, flags, param):
             if BTN_OPEN_IMAGE[0] <= x <= BTN_OPEN_IMAGE[2] and BTN_OPEN_IMAGE[1] <= y <= BTN_OPEN_IMAGE[3]:
                 acao_selecionar_imagem_usuario()
                 return
+            elif BTN_HAND_PAN[0] <= x <= BTN_HAND_PAN[2] and BTN_HAND_PAN[1] <= y <= BTN_HAND_PAN[3]:
+                alternar_modo_mao()
+                return
             elif BTN_ZOOM_IN[0] <= x <= BTN_ZOOM_IN[2] and BTN_ZOOM_IN[1] <= y <= BTN_ZOOM_IN[3]:
                 aplicar_zoom(1.4)
                 return
@@ -925,6 +962,10 @@ def callback_mouse(event, x, y, flags, param):
 
         # Clique dentro da imagem: Marcação de ponto na resolução original
         if img_base is not None and offset_x <= x < offset_x + fit_w and offset_y <= y < offset_y + fit_h:
+            # Se o Modo Mão estiver ativo, nunca marca ponto (já tratado no Iniciar Pan)
+            if modo_mao_ativo:
+                return
+
             h_orig, w_orig = img_base.shape[:2]
             norm_x = (x - offset_x) / fit_w
             norm_y = (y - offset_y) / fit_h
@@ -986,7 +1027,7 @@ def carregar_anotacoes(caminho_arquivo: Path, img_shape=None) -> int:
 def main():
     global img_base, img_thumb, raio_marcador_display, deve_encerrar, caminho_img_ativo, caminho_saida_ativo
     global screen_w, screen_h, is_fullscreen, status_mensagem, status_cor, space_is_pressed
-    global center_x, center_y, zoom_level, modal_confirmacao_ativo, alteracoes_pendentes, salvar_ao_finalizar
+    global center_x, center_y, zoom_level, modal_confirmacao_ativo, alteracoes_pendentes, salvar_ao_finalizar, modo_mao_ativo
 
     parser = argparse.ArgumentParser(
         description="Anotador Manual de Pontos (Ground Truth) para Contagem de Pessoas em Alta Resolução",
@@ -1096,6 +1137,7 @@ def main():
     print("   ANOTADOR INICIADO EM ALTA RESOLUÇÃO COM ZOOM E PAN")
     print("=" * 76)
     print("  • BOTÃO [Abrir (O)]:      Escolher/abrir qualquer imagem do computador")
+    print("  • BOTÃO [Mão (H)]:        Mover câmera livremente com clique esquerdo (sem marcar)")
     print("  • ROLAR MOUSE (Scroll):   Zoom In / Zoom Out exato no local apontado")
     print("  • BOTÃO DO MEIO ARRASTAR: Mover (Pan) suavemente pela cena")
     print("  • ESPAÇO + CLIQUE ESQ:    Mover (Pan) pela cena (estilo Photoshop/Figma)")
@@ -1148,6 +1190,10 @@ def main():
         # 0. Abrir Imagem: Ctrl+O (15 / 0x0F) ou tecla 'o'/'O'
         if raw_key in (15, 0x0F) or (key in [ord("o"), ord("O")] and not space_is_pressed):
             acao_selecionar_imagem_usuario()
+
+        # 0.1 Alternar Ferramenta Mão / Pan: 'h' / 'H', 'm' / 'M'
+        elif key in [ord("h"), ord("H"), ord("m"), ord("M")] and not space_is_pressed:
+            alternar_modo_mao()
 
         # 1. Salvar Checkpoint: Ctrl+S (19 / 0x13) ou tecla 's'/'S' (quando não for seta)
         elif raw_key in (19, 0x13) or (key in [ord("s"), ord("S")] and raw_key not in KEY_DOWN):

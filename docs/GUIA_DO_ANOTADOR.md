@@ -29,6 +29,9 @@ Para não se perder nem contar a mesma pessoa duas vezes:
    - Ao atingir a borda direita, desça um nível e volte navegando para a esquerda (movimento em "serpente").
 2. **Utilize o Mini-Mapa:**
    - Olhe o retângulo amarelo no canto inferior direito para ter certeza de qual setor você já cobriu.
+3. **Use a Ferramenta Mão (`H`) para Navegar sem Erro:**
+   - Ao mover a imagem com o mouse, ative a **Mão (`H`)** no menu superior. Isso bloqueia a marcação acidental de pontos enquanto você reposiciona a cena com o clique esquerdo.
+   - Ao encontrar a pessoa a marcar, tecle `H` novamente para voltar ao Modo Marcador.
 
 ---
 

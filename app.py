@@ -77,7 +77,10 @@ status_cor = (203, 213, 225)
 caminho_img_ativo = None
 caminho_saida_ativo = None
 
+WINDOW_NAME = "Anotador de Multidoes (Ground Truth)"
+
 # Botões interativos no HUD
+BTN_OPEN_IMAGE = (0, 0, 0, 0)
 BTN_ZOOM_IN = (0, 0, 0, 0)
 BTN_ZOOM_OUT = (0, 0, 0, 0)
 BTN_RESET_ZOOM = (0, 0, 0, 0)
@@ -133,6 +136,65 @@ def obter_resolucao_tela(default_w: int = 1920, default_h: int = 1080):
     return default_w, default_h
 
 
+def abrir_dialogo_arquivo(pasta_inicial: Path = None) -> Path:
+    """Abre caixa de diálogo nativa de seleção de arquivo (Windows, Linux, macOS)."""
+    # 1. Tentativa via Tkinter (padrão em Windows)
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+        diretorio = str(pasta_inicial.resolve()) if (pasta_inicial and pasta_inicial.exists()) else str(APP_ROOT)
+        caminho = filedialog.askopenfilename(
+            title="Selecione a Imagem para Contagem de Pessoas",
+            initialdir=diretorio,
+            filetypes=[
+                ("Imagens Aéreas", "*.jpg *.jpeg *.png *.bmp *.tif *.tiff *.JPG *.JPEG *.PNG"),
+                ("Todos os arquivos", "*.*")
+            ]
+        )
+        root.destroy()
+        if caminho:
+            p = Path(caminho)
+            if p.exists() and p.is_file():
+                return p
+    except Exception:
+        pass
+
+    # 2. Tentativa via zenity no Linux (padrão em GNOME/Ubuntu)
+    if sys.platform.startswith("linux"):
+        import shutil
+        import subprocess
+        if shutil.which("zenity"):
+            try:
+                filtro = "--file-filter=Imagens (*.jpg, *.png) | *.jpg *.jpeg *.png *.bmp *.tif *.tiff *.JPG *.JPEG *.PNG"
+                cmd = ["zenity", "--file-selection", "--title=Selecione a Imagem para Contar", filtro]
+                if pasta_inicial and pasta_inicial.exists():
+                    cmd.append(f"--filename={pasta_inicial.resolve()}/")
+                res = subprocess.run(cmd, capture_output=True, text=True, check=False)
+                if res.returncode == 0 and res.stdout.strip():
+                    p = Path(res.stdout.strip())
+                    if p.exists() and p.is_file():
+                        return p
+            except Exception:
+                pass
+
+        # 3. Tentativa via kdialog no Linux (KDE)
+        if shutil.which("kdialog"):
+            try:
+                cmd = ["kdialog", "--getopenfilename", str(pasta_inicial or "."), "*.jpg *.jpeg *.png *.JPG *.JPEG *.PNG"]
+                res = subprocess.run(cmd, capture_output=True, text=True, check=False)
+                if res.returncode == 0 and res.stdout.strip():
+                    p = Path(res.stdout.strip())
+                    if p.exists() and p.is_file():
+                        return p
+            except Exception:
+                pass
+
+    return None
+
+
 def selecionar_imagem(caminho_solicitado: Path = None, pasta_input: Path = None) -> Path:
     """Identifica a imagem a ser anotada via argumento, pasta data/input/, seletor gráfico ou menu de terminal."""
     if caminho_solicitado and caminho_solicitado.exists() and caminho_solicitado.is_file():
@@ -157,31 +219,10 @@ def selecionar_imagem(caminho_solicitado: Path = None, pasta_input: Path = None)
             print(f"[*] Imagem única encontrada automaticamente em data/input/: {imagens_encontradas[0].name}")
             return imagens_encontradas[0]
 
-    # 1. Tentativa via Seletor Visual Nativo (Tkinter) - ideal para Windows
-    try:
-        import tkinter as tk
-        from tkinter import filedialog
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes("-topmost", True)
-        diretorio_inicial = str(pasta_input.resolve()) if (pasta_input and pasta_input.exists()) else str(APP_ROOT)
-        print("[*] Abrindo seletor de arquivos do sistema...")
-        selecionado = filedialog.askopenfilename(
-            title="Selecione a Imagem da Multidão para Anotar",
-            initialdir=diretorio_inicial,
-            filetypes=[
-                ("Imagens Aéreas", "*.jpg *.jpeg *.png *.bmp *.tif *.tiff *.JPG *.JPEG *.PNG"),
-                ("Todos os arquivos", "*.*")
-            ]
-        )
-        root.destroy()
-        if selecionado:
-            p = Path(selecionado)
-            if p.exists() and p.is_file():
-                return p
-    except Exception:
-        # Tkinter não disponível (comum em servidores ou ambientes Linux sem python3-tk)
-        pass
+    # 1. Tentativa via Seletor Visual Nativo do Sistema
+    escolhida_dialogo = abrir_dialogo_arquivo(pasta_input)
+    if escolhida_dialogo:
+        return escolhida_dialogo
 
     # 2. Fallback: Menu no Terminal com as imagens encontradas em data/input/
     if imagens_encontradas:
@@ -227,6 +268,96 @@ def selecionar_imagem(caminho_solicitado: Path = None, pasta_input: Path = None)
             pass
 
     return None
+
+
+def carregar_imagem_no_app(caminho_nova_img: Path, pasta_saida_base: Path = None, salvar_atual: bool = True) -> bool:
+    """Carrega uma nova imagem no aplicativo, salvando o progresso da anterior e ajustando a UI."""
+    global img_base, img_thumb, caminho_img_ativo, caminho_saida_ativo, coordenadas
+    global center_x, center_y, zoom_level, status_mensagem, status_cor
+
+    if caminho_nova_img is None or not caminho_nova_img.exists():
+        return False
+
+    if salvar_atual and caminho_img_ativo is not None and len(coordenadas) > 0:
+        print("[*] Gravando checkpoint da imagem anterior antes da troca...")
+        salvar_checkpoint(silencioso=False)
+
+    print(f"[*] Carregando imagem: {caminho_nova_img.name}")
+    nova_img = cv2.imread(str(caminho_nova_img))
+    if nova_img is None:
+        print(f"[ERRO] Falha ao decodificar a imagem: {caminho_nova_img}")
+        status_mensagem = f"Erro ao abrir: {caminho_nova_img.name}"
+        status_cor = (248, 113, 113)
+        atualizar_canvas()
+        return False
+
+    img_base = nova_img
+    caminho_img_ativo = caminho_nova_img
+
+    h_orig, w_orig = img_base.shape[:2]
+    center_x = w_orig / 2.0
+    center_y = h_orig / 2.0
+    zoom_level = 1.0
+
+    # Miniatura PiP
+    thumb_w = 180
+    thumb_h = int(round(180 * (h_orig / w_orig)))
+    img_thumb = cv2.resize(img_base, (thumb_w, thumb_h), interpolation=cv2.INTER_AREA)
+
+    # Subdiretório de saída
+    stem = caminho_nova_img.stem
+    raiz_saida = pasta_saida_base if pasta_saida_base is not None else DEFAULT_OUTPUT_DIR
+    if raiz_saida.name == "ground_truth":
+        caminho_saida_ativo = raiz_saida / stem
+    else:
+        caminho_saida_ativo = raiz_saida
+    caminho_saida_ativo.mkdir(parents=True, exist_ok=True)
+
+    # Continuação automática: busca anotações existentes para esta imagem
+    coordenadas = []
+    p_chk_stem = caminho_saida_ativo / f"checkpoint_{stem}.json"
+    p_chk_anot = caminho_saida_ativo / "checkpoint_anotacao.json"
+    p_csv_stem = caminho_saida_ativo / f"pontos_ground_truth_{stem}.csv"
+
+    arquivo_alvo = None
+    for cand in (p_chk_stem, p_chk_anot, p_csv_stem):
+        if cand.exists():
+            arquivo_alvo = cand
+            break
+
+    n_rec = 0
+    if arquivo_alvo:
+        n_rec = carregar_anotacoes(arquivo_alvo, img_base.shape)
+
+    if n_rec > 0:
+        status_mensagem = f"✓ Carregado: {caminho_nova_img.name} ({n_rec} pts recuperados)"
+        status_cor = (74, 222, 128)
+        print(f"[✓ CONTINUAÇÃO AUTOMÁTICA] Recuperadas {n_rec} anotações de {arquivo_alvo.name}!")
+    else:
+        status_mensagem = f"Imagem carregada: {caminho_nova_img.name} (0 pts)"
+        status_cor = (147, 197, 253)
+
+    atualizar_canvas()
+    return True
+
+
+def acao_selecionar_imagem_usuario():
+    """Abre o seletor nativo para o usuário escolher qualquer imagem no computador."""
+    global status_mensagem, status_cor
+    status_mensagem = "Aguardando selecao de imagem no computador..."
+    status_cor = (250, 204, 21)
+    atualizar_canvas()
+    cv2.waitKey(1)
+
+    pasta_sugestao = DEFAULT_INPUT_DIR if DEFAULT_INPUT_DIR.exists() else APP_ROOT
+    escolhida = abrir_dialogo_arquivo(pasta_inicial=pasta_sugestao)
+    if escolhida:
+        carregar_imagem_no_app(escolhida)
+    else:
+        status_mensagem = "Selecao cancelada"
+        status_cor = (203, 213, 225)
+        atualizar_canvas()
+
 
 
 
@@ -359,15 +490,43 @@ def salvar_checkpoint(silencioso: bool = False):
 
 def atualizar_canvas():
     """Renderiza a região visível em alta resolução, projeta os pontos e o HUD."""
-    global img_display, BTN_ZOOM_IN, BTN_ZOOM_OUT, BTN_RESET_ZOOM, BTN_UNDO, BTN_SAVE, BTN_FINISH
+    global img_display, BTN_OPEN_IMAGE, BTN_ZOOM_IN, BTN_ZOOM_OUT, BTN_RESET_ZOOM, BTN_UNDO, BTN_SAVE, BTN_FINISH
     global fit_w, fit_h, offset_x, offset_y, scale_fit
+
+    w = screen_w
+    avail_w = screen_w
+    avail_h = screen_h - HUD_HEIGHT
+
+    # Modo Standby: caso o app inicie sem imagem carregada
+    if img_base is None:
+        img_display = np.zeros((screen_h, screen_w, 3), dtype=np.uint8)
+        img_display[:] = (18, 22, 30)
+
+        # Barra de HUD superior
+        cv2.rectangle(img_display, (0, 0), (w, HUD_HEIGHT), (15, 23, 42), -1)
+        cv2.line(img_display, (0, HUD_HEIGHT), (w, HUD_HEIGHT), (56, 189, 248), 2)
+
+        cv2.putText(img_display, "Anotador de Multidoes", (16, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.70, (148, 163, 184), 2, cv2.LINE_AA)
+        cv2.putText(img_display, status_mensagem, (320, 31), cv2.FONT_HERSHEY_SIMPLEX, 0.48, status_cor, 1, cv2.LINE_AA)
+
+        # Botão: Abrir Imagem (O)
+        op_x1, op_y1, op_x2, op_y2 = w - 835, 8, w - 700, 42
+        BTN_OPEN_IMAGE = (op_x1, op_y1, op_x2, op_y2)
+        cv2.rectangle(img_display, (op_x1, op_y1), (op_x2, op_y2), (30, 58, 138), -1)
+        cv2.rectangle(img_display, (op_x1, op_y1), (op_x2, op_y2), (96, 165, 250), 1)
+        cv2.putText(img_display, "Abrir (O)", (op_x1 + 14, op_y1 + 23), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (255, 255, 255), 1, cv2.LINE_AA)
+
+        # Mensagem central
+        cv2.putText(img_display, "ANOTADOR DE MULTIDOES - IPPUC / RGBTCC", (w // 2 - 320, screen_h // 2 - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.85, (255, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(img_display, "Nenhuma imagem selecionada no momento.", (w // 2 - 220, screen_h // 2 + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (148, 163, 184), 1, cv2.LINE_AA)
+        cv2.putText(img_display, "Clique no botao [ Abrir (O) ] acima para escolher uma foto no seu computador.", (w // 2 - 380, screen_h // 2 + 50), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (56, 189, 248), 1, cv2.LINE_AA)
+
+        cv2.imshow(WINDOW_NAME, img_display)
+        return
 
     calcular_roi()
 
     h_orig, w_orig = img_base.shape[:2]
-    w = screen_w
-    avail_w = screen_w
-    avail_h = screen_h - HUD_HEIGHT
 
     rx1, ry1 = int(round(roi_x1)), int(round(roi_y1))
     rx2, ry2 = int(round(roi_x2)), int(round(roi_y2))
@@ -457,6 +616,13 @@ def atualizar_canvas():
     )
 
     # Botões interativos à direita:
+    # Botão: Abrir Imagem (O)
+    op_x1, op_y1, op_x2, op_y2 = w - 835, 8, w - 700, 42
+    BTN_OPEN_IMAGE = (op_x1, op_y1, op_x2, op_y2)
+    cv2.rectangle(img_display, (op_x1, op_y1), (op_x2, op_y2), (30, 58, 138), -1)
+    cv2.rectangle(img_display, (op_x1, op_y1), (op_x2, op_y2), (96, 165, 250), 1)
+    cv2.putText(img_display, "Abrir (O)", (op_x1 + 14, op_y1 + 23), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (255, 255, 255), 1, cv2.LINE_AA)
+
     # Zoom +
     z1_x1, z1_y1, z1_x2, z1_y2 = w - 690, 8, w - 645, 42
     BTN_ZOOM_IN = (z1_x1, z1_y1, z1_x2, z1_y2)
@@ -499,7 +665,7 @@ def atualizar_canvas():
     cv2.rectangle(img_display, (f_x1, f_y1), (f_x2, f_y2), (255, 255, 255), 1)
     cv2.putText(img_display, "V Finalizar", (f_x1 + 16, f_y1 + 23), cv2.FONT_HERSHEY_SIMPLEX, 0.50, (255, 255, 255), 2, cv2.LINE_AA)
 
-    cv2.imshow("Anotacao de Ground Truth (RGBTCC)", img_display)
+    cv2.imshow(WINDOW_NAME, img_display)
 
 
 def desfazer_ultimo_ponto():
@@ -522,6 +688,10 @@ def callback_mouse(event, x, y, flags, param):
     """Manipula eventos do mouse: Zoom por scroll, Pan por arraste e marcação de pontos."""
     global coordenadas, deve_encerrar, status_mensagem, status_cor
     global is_dragging_pan, pan_start_screen, pan_start_center, center_x, center_y
+
+    # Se nenhuma imagem foi aberta ainda, permite apenas interação com HUD
+    if img_base is None and y > HUD_HEIGHT:
+        return
 
     # 1. Roda do Mouse (Zoom In / Out no cursor)
     if event == cv2.EVENT_MOUSEWHEEL:
@@ -560,7 +730,10 @@ def callback_mouse(event, x, y, flags, param):
     elif event == cv2.EVENT_LBUTTONDOWN:
         # Clique no HUD
         if y <= HUD_HEIGHT:
-            if BTN_ZOOM_IN[0] <= x <= BTN_ZOOM_IN[2] and BTN_ZOOM_IN[1] <= y <= BTN_ZOOM_IN[3]:
+            if BTN_OPEN_IMAGE[0] <= x <= BTN_OPEN_IMAGE[2] and BTN_OPEN_IMAGE[1] <= y <= BTN_OPEN_IMAGE[3]:
+                acao_selecionar_imagem_usuario()
+                return
+            elif BTN_ZOOM_IN[0] <= x <= BTN_ZOOM_IN[2] and BTN_ZOOM_IN[1] <= y <= BTN_ZOOM_IN[3]:
                 aplicar_zoom(1.4)
                 return
             elif BTN_ZOOM_OUT[0] <= x <= BTN_ZOOM_OUT[2] and BTN_ZOOM_OUT[1] <= y <= BTN_ZOOM_OUT[3]:
@@ -582,7 +755,7 @@ def callback_mouse(event, x, y, flags, param):
             return
 
         # Clique dentro da imagem: Marcação de ponto na resolução original
-        if offset_x <= x < offset_x + fit_w and offset_y <= y < offset_y + fit_h:
+        if img_base is not None and offset_x <= x < offset_x + fit_w and offset_y <= y < offset_y + fit_h:
             h_orig, w_orig = img_base.shape[:2]
             norm_x = (x - offset_x) / fit_w
             norm_y = (y - offset_y) / fit_h
@@ -713,79 +886,46 @@ def main():
 
     print(f"[*] Resolução de tela adotada: {screen_w}x{screen_h} px")
 
-    # 2. Localização da imagem
-    caminho_img = selecionar_imagem(args.imagem, args.input_dir)
-    if caminho_img is None or not caminho_img.exists():
-        print("\n[ERRO] Nenhuma imagem foi selecionada ou encontrada!")
-        print(f"-> Coloque sua imagem (.JPG) na pasta: {DEFAULT_INPUT_DIR.resolve()}")
-        print("-> Ou execute informando o caminho: python app.py --imagem caminho/da/imagem.JPG\n")
-        sys.exit(1)
-
-    print(f"[*] Carregando imagem: {caminho_img.name}")
-    img_base = cv2.imread(str(caminho_img))
-    if img_base is None:
-        print(f"[ERRO] Falha ao decodificar a imagem com OpenCV: {caminho_img}")
-        sys.exit(1)
-
-    h_orig, w_orig = img_base.shape[:2]
-    center_x = w_orig / 2.0
-    center_y = h_orig / 2.0
-    print(f"[✓] Imagem carregada com sucesso: {w_orig}x{h_orig} px")
-
-    # Pré-computar miniatura para o Mini-Mapa PiP
-    thumb_w = 180
-    thumb_h = int(round(180 * (h_orig / w_orig)))
-    img_thumb = cv2.resize(img_base, (thumb_w, thumb_h), interpolation=cv2.INTER_AREA)
-
-    # Subdiretório específico para a imagem contada
-    stem = caminho_img.stem
-    pasta_destino = args.saida
-    if pasta_destino.name == "ground_truth":
-        pasta_destino = pasta_destino / stem
-
-    caminho_img_ativo = caminho_img
-    caminho_saida_ativo = pasta_destino
-    pasta_destino.mkdir(parents=True, exist_ok=True)
-    print(f"[*] Diretório de saída da cena: {pasta_destino}")
-
-    # 3. Continuação automática: Recupera anotações existentes
-    p_csv_stem = pasta_destino / f"pontos_ground_truth_{stem}.csv"
-    p_chk_stem = pasta_destino / f"checkpoint_{stem}.json"
-    p_chk_anot = pasta_destino / "checkpoint_anotacao.json"
-
-    if args.carregar:
-        n_rec = carregar_anotacoes(args.carregar, img_base.shape)
-        if n_rec > 0:
-            print(f"[*] Carregadas {n_rec} anotações de: {args.carregar}")
-            status_mensagem = f"✓ Carregadas {n_rec} anotações prévias"
-            status_cor = (74, 222, 128)
-    elif not args.novo:
-        arquivo_alvo = None
-        for cand in (p_chk_stem, p_chk_anot, p_csv_stem):
-            if cand.exists():
-                arquivo_alvo = cand
-                break
-        if arquivo_alvo:
-            n_rec = carregar_anotacoes(arquivo_alvo, img_base.shape)
-            if n_rec > 0:
-                print(f"[✓ CONTINUAÇÃO AUTOMÁTICA] Recuperadas {n_rec} anotações anteriores de {arquivo_alvo.name}!")
-                status_mensagem = f"✓ Recuperados {n_rec} pontos salvos"
-                status_cor = (74, 222, 128)
-
-    # 4. Inicialização da Janela OpenCV
-    window_name = "Anotador de Multidoes (Ground Truth)"
-    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+    # 2. Inicialização da Janela OpenCV
+    cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
     if is_fullscreen:
-        cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        cv2.setWindowProperty(WINDOW_NAME, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
     else:
-        cv2.resizeWindow(window_name, screen_w, screen_h)
+        cv2.resizeWindow(WINDOW_NAME, screen_w, screen_h)
 
-    cv2.setMouseCallback(window_name, callback_mouse)
-    atualizar_canvas()
+    cv2.setMouseCallback(WINDOW_NAME, callback_mouse)
+
+    # 3. Localização e Carregamento da Imagem
+    caminho_img = None
+    if args.imagem:
+        caminho_img = selecionar_imagem(args.imagem, args.input_dir)
+    else:
+        caminho_img = selecionar_imagem(None, args.input_dir)
+
+    if caminho_img is not None and caminho_img.exists():
+        carregar_imagem_no_app(caminho_img, args.saida, salvar_atual=False)
+        if args.carregar:
+            n_rec = carregar_anotacoes(args.carregar, img_base.shape)
+            if n_rec > 0:
+                print(f"[*] Carregadas {n_rec} anotações de: {args.carregar}")
+                status_mensagem = f"✓ Carregadas {n_rec} anotações prévias"
+                status_cor = (74, 222, 128)
+                atualizar_canvas()
+        elif args.novo:
+            coordenadas.clear()
+            status_mensagem = "Nova anotação em branco iniciada"
+            atualizar_canvas()
+    else:
+        print("[*] Nenhuma imagem inicial selecionada. O app abrirá em modo de espera.")
+        print("[*] Clique no botão [ Abrir (O) ] no topo para selecionar uma foto no seu computador.")
+        status_mensagem = "Clique no botao [ Abrir (O) ] acima ou tecle 'O'"
+        status_cor = (250, 204, 21)
+        atualizar_canvas()
 
     print("\n" + "=" * 76)
     print("   ANOTADOR INICIADO EM ALTA RESOLUÇÃO COM ZOOM E PAN")
     print("=" * 76)
+    print("  • BOTÃO [Abrir (O)]:      Escolher/abrir qualquer imagem do computador")
     print("  • ROLAR MOUSE (Scroll):   Zoom In / Zoom Out exato no local apontado")
     print("  • BOTÃO DO MEIO ARRASTAR: Mover (Pan) suavemente pela cena")
     print("  • ESPAÇO + CLIQUE ESQ:    Mover (Pan) pela cena (estilo Photoshop/Figma)")
@@ -820,8 +960,12 @@ def main():
         if key == 32:
             space_is_pressed = True
 
+        # 0. Abrir Imagem: Ctrl+O (15 / 0x0F) ou tecla 'o'/'O'
+        if raw_key in (15, 0x0F) or (key in [ord("o"), ord("O")] and not space_is_pressed):
+            acao_selecionar_imagem_usuario()
+
         # 1. Salvar Checkpoint: Ctrl+S (19 / 0x13) ou tecla 's'/'S' (quando não for seta)
-        if raw_key in (19, 0x13) or (key in [ord("s"), ord("S")] and raw_key not in KEY_DOWN):
+        elif raw_key in (19, 0x13) or (key in [ord("s"), ord("S")] and raw_key not in KEY_DOWN):
             salvar_checkpoint()
 
         # 2. Finalizar e Encerrar: 'f' / 'F', ESC (27)
@@ -833,11 +977,9 @@ def main():
         elif raw_key in (26, 8, 127, 65535) or key in (26, ord("z"), ord("Z"), ord("u"), ord("U"), 8, 127):
             desfazer_ultimo_ponto()
 
-        # 4. Zoom pelo teclado: 'i'/'I' (In), 'o'/'O' (Out), 'r'/'R' (Reset)
+        # 4. Zoom pelo teclado: 'i'/'I' (In), 'r'/'R' (Reset)
         elif key in [ord("i"), ord("I")]:
             aplicar_zoom(1.35)
-        elif key in [ord("o"), ord("O")]:
-            aplicar_zoom(1.0 / 1.35)
         elif key in [ord("r"), ord("R")]:
             reset_zoom()
 
@@ -867,10 +1009,10 @@ def main():
         elif raw_key in (65480, 115, 122, 0x7A0000):
             is_fullscreen = not is_fullscreen
             if is_fullscreen:
-                cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+                cv2.setWindowProperty(WINDOW_NAME, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
             else:
-                cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_NORMAL)
-                cv2.resizeWindow(window_name, screen_w - 100, screen_h - 100)
+                cv2.setWindowProperty(WINDOW_NAME, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_NORMAL)
+                cv2.resizeWindow(WINDOW_NAME, screen_w - 100, screen_h - 100)
 
         # 8. Limpar marcações ('c' / 'C')
         elif key in [ord("c"), ord("C")]:
@@ -883,9 +1025,17 @@ def main():
 
     cv2.destroyAllWindows()
 
+    if caminho_img_ativo is None or img_base is None or caminho_saida_ativo is None:
+        print("[*] Aplicação encerrada sem imagem ativa.")
+        return
+
     # --------------------------------------------------------------------------
     # Exportação Final dos Entregáveis (Executada ao Finalizar)
     # --------------------------------------------------------------------------
+    stem = caminho_img_ativo.stem
+    pasta_destino = caminho_saida_ativo
+    h_orig, w_orig = img_base.shape[:2]
+
     p_csv_stem = pasta_destino / f"pontos_ground_truth_{stem}.csv"
     p_json_stem = pasta_destino / f"pontos_ground_truth_{stem}.json"
     p_json_aligned = pasta_destino / f"ground_truth_aligned_1280x1024_{stem}.json"
@@ -902,8 +1052,8 @@ def main():
     telemetria_gt = {
         "status": "finalizado",
         "data_finalizacao": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "imagem_origem": str(caminho_img),
-        "arquivo_nome": caminho_img.name,
+        "imagem_origem": str(caminho_img_ativo),
+        "arquivo_nome": caminho_img_ativo.name,
         "resolucao_original": {
             "largura": int(img_base.shape[1]),
             "altura": int(img_base.shape[0]),
@@ -934,8 +1084,8 @@ def main():
         pontos_aligned.append({"id": pt["id"], "x": px, "y": py})
 
     gt_aligned_data = {
-        "cena": caminho_img.stem,
-        "arquivo_origem": caminho_img.name,
+        "cena": caminho_img_ativo.stem,
+        "arquivo_origem": caminho_img_ativo.name,
         "resolucao_alinhada": [1280, 1024],
         "total_pessoas_anotadas": len(pontos_aligned),
         "pontos": pontos_aligned,
@@ -947,7 +1097,7 @@ def main():
     # 5. Salvar Metadados da Imagem Contada
     meta_info = {
         "imagem_contada": stem,
-        "imagem_rgb": caminho_img.name,
+        "imagem_rgb": caminho_img_ativo.name,
         "status_anotacao": "finalizado",
         "data_finalizacao": time.strftime("%Y-%m-%d %H:%M:%S"),
         "total_pessoas_anotadas": len(coordenadas),
@@ -972,7 +1122,7 @@ def main():
     print("\n" + "=" * 76)
     print("       CONTAGEM FINALIZADA E ENTREGÁVEIS GERADOS COM SUCESSO")
     print("=" * 76)
-    print(f"  [✓] Imagem Base Utilizada:     {caminho_img.name} ({w_orig}x{h_orig} px)")
+    print(f"  [✓] Imagem Base Utilizada:     {caminho_img_ativo.name} ({w_orig}x{h_orig} px)")
     print(f"  [✓] Total de Pessoas Anotadas: {len(coordenadas)}")
     print(f"  [✓] Tabela CSV de Coordenadas: {p_csv_stem.name}")
     print(f"  [✓] Metadados e Pontos JSON:   {p_json_stem.name}")

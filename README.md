@@ -32,7 +32,10 @@ Você só precisa ter o **Python** instalado no seu Windows:
 
 ---
 
-## 🎮 Controles e Atalhos
+### Seleção e Arquivos
+| Ação | Como Fazer |
+| :--- | :--- |
+| **Abrir Imagem do PC** | Clicar no botão **`[ Abrir (O) ]`** no topo OU pressionar **`Ctrl + O`** / **`O`** |
 
 ### Navegação (Zoom e Movimento)
 | Ação | Como Fazer |

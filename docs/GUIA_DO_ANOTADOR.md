@@ -32,6 +32,9 @@ Para não se perder nem contar a mesma pessoa duas vezes:
 3. **Use a Ferramenta Mão (`H`) para Navegar sem Erro:**
    - Ao mover a imagem com o mouse, ative a **Mão (`H`)** no menu superior. Isso bloqueia a marcação acidental de pontos enquanto você reposiciona a cena com o clique esquerdo.
    - Ao encontrar a pessoa a marcar, tecle `H` novamente para voltar ao Modo Marcador.
+4. **Header Flutuante Sempre Acessível:**
+   - A barra superior com os botões acompanha sua navegação flutuando sobre a imagem com fundo translúcido. Você pode alternar a Mão, salvar checkpoint ou re-enquadrar (`Fit`) a qualquer momento, sem precisar desdar o zoom.
+   - A imagem aproveita 100% da sua tela e você pode ver detalhes mesmo através da transparência do cabeçalho.
 
 ---
 

@@ -35,5 +35,6 @@ Para não se perder nem contar a mesma pessoa duas vezes:
 ## 3. Ergonomia e Segurança dos Dados
 
 - **Salve a cada 5 minutos (`Ctrl + S`):** Não espere chegar ao final de uma imagem de 1.000 pessoas para salvar. Pressionar `Ctrl + S` grava um checkpoint imediato em disco.
+- **Confirmação de Finalização Segura:** Ao clicar em `[ Finalizar ]` ou teclar `F`/`ESC`, o aplicativo avisa caso haja marcações pendentes de salvamento, dando a opção de salvar antes de fechar ou descartar.
 - **Se precisar pausar:** Basta fechar a janela. Ao abrir o programa novamente na mesma imagem, ele **continua automaticamente** de onde você parou, recuperando todas as cabeças anotadas.
 - **Descanso Visual:** A contagem visual de multidões pode cansar a vista. Faça uma pausa de 5 minutos a cada bloco de 300 pessoas anotadas.

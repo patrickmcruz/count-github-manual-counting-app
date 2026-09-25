@@ -1,0 +1,35 @@
+# Ambientes virtuais
+.venv/
+env/
+venv/
+ENV/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Imagens de entrada pesadas (manter apenas estrutura)
+data/input/*.JPG
+data/input/*.jpg
+data/input/*.jpeg
+data/input/*.png
+!data/input/.gitkeep
+
+# Dados de anotações locais em andamento (exceto gitkeep)
+data/ground_truth/*
+!data/ground_truth/.gitkeep
+!data/ground_truth/README.md
+
+# Logs e arquivos de sistema
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo

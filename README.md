@@ -40,6 +40,7 @@ Você só precisa ter o **Python** instalado no seu Windows:
 ### Navegação (Zoom e Movimento)
 | Ação | Como Fazer |
 | :--- | :--- |
+| **Header Flutuante (Menu Fixo)** | Barra de ferramentas translúcida (*glassmorphism*) suspensa no topo da tela: permanece sempre visível e clicável durante qualquer zoom ou pan, permitindo alternar ferramentas sem perder a visão da imagem |
 | **Ferramenta Mão (Pan)** | Clicar no botão **`[ Mao (H) ]`** no topo OU teclar **`H`**.<br>*(Com a Mão ativa, clique e arraste com o Botão Esquerdo livremente sem perigo de registrar pontos acidentais!)* |
 | **Aproximar / Afastar (Zoom)** | **Girar a Roda do Mouse (Scroll)** centrado onde a seta estiver |
 | **Mover pela imagem (Pan Rápido)** | **Clicar e segurar a Roda do Mouse** e arrastar<br>OU segurar **ESPAÇO + Clique Esquerdo** e arrastar<br>OU usar as teclas **W, A, S, D** / **Setas do Teclado** |

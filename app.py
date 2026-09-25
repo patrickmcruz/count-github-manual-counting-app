@@ -527,7 +527,7 @@ def atualizar_canvas():
 
     w = screen_w
     avail_w = screen_w
-    avail_h = screen_h - HUD_HEIGHT
+    avail_h = screen_h
 
     # Modo Standby: caso o app inicie sem imagem carregada
     if img_base is None:
@@ -542,11 +542,18 @@ def atualizar_canvas():
         cv2.putText(img_display, status_mensagem, (320, 31), cv2.FONT_HERSHEY_SIMPLEX, 0.48, status_cor, 1, cv2.LINE_AA)
 
         # Botão: Abrir Imagem (O)
-        op_x1, op_y1, op_x2, op_y2 = w - 835, 8, w - 700, 42
+        op_x1, op_y1, op_x2, op_y2 = w - 970, 8, w - 860, 42
         BTN_OPEN_IMAGE = (op_x1, op_y1, op_x2, op_y2)
         cv2.rectangle(img_display, (op_x1, op_y1), (op_x2, op_y2), (30, 58, 138), -1)
         cv2.rectangle(img_display, (op_x1, op_y1), (op_x2, op_y2), (96, 165, 250), 1)
-        cv2.putText(img_display, "Abrir (O)", (op_x1 + 14, op_y1 + 23), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (255, 255, 255), 1, cv2.LINE_AA)
+        cv2.putText(img_display, "Abrir (O)", (op_x1 + 12, op_y1 + 23), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (255, 255, 255), 1, cv2.LINE_AA)
+
+        # Botão: Ferramenta Mão (inativo em standby)
+        hp_x1, hp_y1, hp_x2, hp_y2 = w - 850, 8, w - 735, 42
+        BTN_HAND_PAN = (hp_x1, hp_y1, hp_x2, hp_y2)
+        cv2.rectangle(img_display, (hp_x1, hp_y1), (hp_x2, hp_y2), (30, 41, 59), -1)
+        cv2.rectangle(img_display, (hp_x1, hp_y1), (hp_x2, hp_y2), (71, 85, 105), 1)
+        cv2.putText(img_display, "Mao (H)", (hp_x1 + 14, hp_y1 + 23), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (100, 116, 139), 1, cv2.LINE_AA)
 
         # Mensagem central
         cv2.putText(img_display, "ANOTADOR DE MULTIDOES - IPPUC / RGBTCC", (w // 2 - 320, screen_h // 2 - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.85, (255, 255, 255), 2, cv2.LINE_AA)
@@ -570,7 +577,7 @@ def atualizar_canvas():
     fit_h = int(round(crop_h * scale_fit))
 
     offset_x = (avail_w - fit_w) // 2
-    offset_y = HUD_HEIGHT + (avail_h - fit_h) // 2
+    offset_y = (avail_h - fit_h) // 2
 
     # Canvas principal escuro
     img_display = np.zeros((screen_h, screen_w, 3), dtype=np.uint8)
@@ -619,8 +626,10 @@ def atualizar_canvas():
         rect_y2 = pip_y + int(round(roi_y2 / h_orig * th_h))
         cv2.rectangle(img_display, (rect_x1, rect_y1), (rect_x2, rect_y2), (0, 255, 255), 2)
 
-    # 3. Barra de HUD superior
-    cv2.rectangle(img_display, (0, 0), (w, HUD_HEIGHT), (15, 23, 42), -1)
+    # 3. Barra de HUD superior (Overlay translúcido flutuante sobre a imagem)
+    hud_overlay = img_display.copy()
+    cv2.rectangle(hud_overlay, (0, 0), (w, HUD_HEIGHT), (15, 23, 42), -1)
+    cv2.addWeighted(hud_overlay, 0.82, img_display, 0.18, 0, img_display)
     cv2.line(img_display, (0, HUD_HEIGHT), (w, HUD_HEIGHT), (56, 189, 248), 2)
 
     # Placar à esquerda
@@ -962,6 +971,9 @@ def callback_mouse(event, x, y, flags, param):
 
         # Clique dentro da imagem: Marcação de ponto na resolução original
         if img_base is not None and offset_x <= x < offset_x + fit_w and offset_y <= y < offset_y + fit_h:
+            # Se o clique for na faixa do cabeçalho flutuante, não adiciona pontos
+            if y <= HUD_HEIGHT:
+                return
             # Se o Modo Mão estiver ativo, nunca marca ponto (já tratado no Iniciar Pan)
             if modo_mao_ativo:
                 return
@@ -1161,6 +1173,17 @@ def main():
     step_pan = 60
 
     while not deve_encerrar:
+        # Sincroniza dinamicamente resolução se houver redimensionamento de janela
+        try:
+            wrect = cv2.getWindowImageRect(WINDOW_NAME)
+            if wrect is not None and len(wrect) >= 4:
+                win_w, win_h = int(wrect[2]), int(wrect[3])
+                if win_w >= 640 and win_h >= 480 and (abs(win_w - screen_w) >= 20 or abs(win_h - screen_h) >= 20):
+                    screen_w, screen_h = win_w, win_h
+                    atualizar_canvas()
+        except Exception:
+            pass
+
         raw_key = cv2.waitKeyEx(30)
         if raw_key == -1:
             space_is_pressed = False

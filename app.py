@@ -134,7 +134,7 @@ def obter_resolucao_tela(default_w: int = 1920, default_h: int = 1080):
 
 
 def selecionar_imagem(caminho_solicitado: Path = None, pasta_input: Path = None) -> Path:
-    """Identifica a imagem a ser anotada via argumento, pasta data/input/ ou seletor gráfico."""
+    """Identifica a imagem a ser anotada via argumento, pasta data/input/, seletor gráfico ou menu de terminal."""
     if caminho_solicitado and caminho_solicitado.exists() and caminho_solicitado.is_file():
         return caminho_solicitado
 
@@ -147,6 +147,7 @@ def selecionar_imagem(caminho_solicitado: Path = None, pasta_input: Path = None)
             return tentativa
 
     # Procura imagens existentes em data/input/
+    imagens_encontradas = []
     if pasta_input and pasta_input.exists():
         imagens_encontradas = sorted([
             p for p in pasta_input.iterdir()
@@ -155,10 +156,8 @@ def selecionar_imagem(caminho_solicitado: Path = None, pasta_input: Path = None)
         if len(imagens_encontradas) == 1:
             print(f"[*] Imagem única encontrada automaticamente em data/input/: {imagens_encontradas[0].name}")
             return imagens_encontradas[0]
-        elif len(imagens_encontradas) > 1:
-            print(f"[*] {len(imagens_encontradas)} imagens disponíveis em data/input/.")
 
-    # Seletor visual nativo de arquivo (Tkinter) para uso em desktop/Windows
+    # 1. Tentativa via Seletor Visual Nativo (Tkinter) - ideal para Windows
     try:
         import tkinter as tk
         from tkinter import filedialog
@@ -166,7 +165,7 @@ def selecionar_imagem(caminho_solicitado: Path = None, pasta_input: Path = None)
         root.withdraw()
         root.attributes("-topmost", True)
         diretorio_inicial = str(pasta_input.resolve()) if (pasta_input and pasta_input.exists()) else str(APP_ROOT)
-        print("[*] Aguardando seleção de imagem na janela de arquivos...")
+        print("[*] Abrindo seletor de arquivos do sistema...")
         selecionado = filedialog.askopenfilename(
             title="Selecione a Imagem da Multidão para Anotar",
             initialdir=diretorio_inicial,
@@ -180,10 +179,55 @@ def selecionar_imagem(caminho_solicitado: Path = None, pasta_input: Path = None)
             p = Path(selecionado)
             if p.exists() and p.is_file():
                 return p
-    except Exception as e:
-        print(f"[!] Seletor visual indisponível: {e}")
+    except Exception:
+        # Tkinter não disponível (comum em servidores ou ambientes Linux sem python3-tk)
+        pass
+
+    # 2. Fallback: Menu no Terminal com as imagens encontradas em data/input/
+    if imagens_encontradas:
+        print("\n" + "=" * 64)
+        print(f"   IMAGENS DISPONÍVEIS NA PASTA {pasta_input.name}/")
+        print("=" * 64)
+        for idx, img_path in enumerate(imagens_encontradas, 1):
+            print(f"  [{idx}] {img_path.name}")
+        print("=" * 64)
+
+        if sys.stdin.isatty():
+            try:
+                msg_prompt = f"\nEscolha o número da imagem [1-{len(imagens_encontradas)}] (Pressione Enter para [1]): "
+                escolha = input(msg_prompt).strip()
+                if not escolha:
+                    print(f"[*] Selecionada opção padrão: {imagens_encontradas[0].name}")
+                    return imagens_encontradas[0]
+                num = int(escolha)
+                if 1 <= num <= len(imagens_encontradas):
+                    selecionada = imagens_encontradas[num - 1]
+                    print(f"[✓] Imagem selecionada: {selecionada.name}")
+                    return selecionada
+                else:
+                    print(f"[!] Opção fora da faixa. Selecionando {imagens_encontradas[0].name} por padrão.")
+                    return imagens_encontradas[0]
+            except (ValueError, EOFError, KeyboardInterrupt):
+                print(f"[*] Selecionando {imagens_encontradas[0].name} por padrão.")
+                return imagens_encontradas[0]
+        else:
+            print(f"[*] Modo não-interativo: selecionando {imagens_encontradas[0].name}")
+            return imagens_encontradas[0]
+
+    # 3. Fallback: Entrada manual de caminho no terminal
+    if sys.stdin.isatty():
+        try:
+            print("\nNenhuma imagem encontrada na pasta data/input/ e seletor gráfico indisponível.")
+            caminho_manual = input("Digite ou cole o caminho completo da imagem (.JPG): ").strip().strip('"').strip("'")
+            if caminho_manual:
+                p = Path(caminho_manual)
+                if p.exists() and p.is_file():
+                    return p
+        except (EOFError, KeyboardInterrupt):
+            pass
 
     return None
+
 
 
 def calcular_roi():

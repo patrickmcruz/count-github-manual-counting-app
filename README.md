@@ -40,15 +40,16 @@ Você só precisa ter o **Python** instalado no seu Windows:
 ### Navegação (Zoom e Movimento)
 | Ação | Como Fazer |
 | :--- | :--- |
+| **Ferramenta Mão (Pan)** | Clicar no botão **`[ Mao (H) ]`** no topo OU teclar **`H`**.<br>*(Com a Mão ativa, clique e arraste com o Botão Esquerdo livremente sem perigo de registrar pontos acidentais!)* |
 | **Aproximar / Afastar (Zoom)** | **Girar a Roda do Mouse (Scroll)** centrado onde a seta estiver |
-| **Mover pela imagem (Pan)** | **Clicar e segurar a Roda do Mouse** e arrastar<br>OU segurar **ESPAÇO + Clique Esquerdo** e arrastar<br>OU usar as teclas **W, A, S, D** / **Setas do Teclado** |
+| **Mover pela imagem (Pan Rápido)** | **Clicar e segurar a Roda do Mouse** e arrastar<br>OU segurar **ESPAÇO + Clique Esquerdo** e arrastar<br>OU usar as teclas **W, A, S, D** / **Setas do Teclado** |
 | **Visão Geral (Enquadrar)** | Pressionar a tecla **`R`** ou clicar no botão **`[ Fit (R) ]`** |
 | **Mini-Mapa (PiP)** | Retângulo amarelo no canto inferior direito mostra a região visível |
 
 ### Marcação e Salvamento
 | Ação | Como Fazer |
 | :--- | :--- |
-| **Marcar Cabeça** | **Clique Esquerdo** no centro da cabeça da pessoa |
+| **Marcar Cabeça** | **Clique Esquerdo** no centro da cabeça da pessoa *(no modo marcador padrão)* |
 | **Desfazer Último Ponto** | **Clique com Botão Direito** OU pressione **`Ctrl + Z`** OU **`U`** |
 | **Salvar Checkpoint** | Pressione **`Ctrl + S`** OU clique no botão **`[ Salvar ]`** *(Faça isso com frequência!)* |
 | **Finalizar Contagem** | Pressione a tecla **`F`** / **`ESC`** OU clique no botão **`[ V Finalizar ]`** *(Abre confirmação de segurança)* |

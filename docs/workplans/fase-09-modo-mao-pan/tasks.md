@@ -10,5 +10,5 @@
 - [x] Executar suíte de interoperabilidade `tests/test_interoperabilidade.py`.
 - [x] Atualizar `README.md` e `docs/GUIA_DO_ANOTADOR.md`.
 - [x] Elaborar `walkthrough.md` com evidências.
-- [ ] Merge da branch `feat/fase-09-modo-mao-pan` em `develop`.
-- [ ] Merge da branch `develop` em `main`.
+- [x] Merge da branch `feat/fase-09-modo-mao-pan` em `develop`.
+- [x] Merge da branch `develop` em `main`.

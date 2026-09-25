@@ -51,9 +51,17 @@ Você só precisa ter o **Python** instalado no seu Windows:
 | **Marcar Cabeça** | **Clique Esquerdo** no centro da cabeça da pessoa |
 | **Desfazer Último Ponto** | **Clique com Botão Direito** OU pressione **`Ctrl + Z`** OU **`U`** |
 | **Salvar Checkpoint** | Pressione **`Ctrl + S`** OU clique no botão **`[ Salvar ]`** *(Faça isso com frequência!)* |
-| **Finalizar Contagem** | Pressione a tecla **`F`** OU clique no botão **`[ V Finalizar ]`** |
+| **Finalizar Contagem** | Pressione a tecla **`F`** / **`ESC`** OU clique no botão **`[ V Finalizar ]`** *(Abre confirmação de segurança)* |
 | **Tamanho do Marcador** | Teclas **`+`** e **`-`** para aumentar/diminuir o ponto na sua tela |
 | **Tela Cheia** | Tecla **`F11`** para alternar entre tela cheia e janela |
+
+### 🛡️ Proteção contra Perda de Dados ao Finalizar
+Ao acionar **Finalizar** (`F` / `ESC` ou botão na barra superior), o aplicativo verifica se existem alterações pendentes:
+- **Com alterações não salvas:** Exibe alerta em destaque âmbar com 3 opções:
+  - `[ Salvar e Sair (S) ]` (Atalho: `S` ou `Enter`): grava os dados e gera os relatórios finais.
+  - `[ Sair sem Salvar (D) ]` (Atalho: `D` ou `X`): descarta modificações recentes e encerra.
+  - `[ Cancelar (ESC) ]` (Atalho: `ESC` ou `C`): cancela a saída e continua anotando.
+- **Com tudo salvo previamente:** Exibe confirmação simples para gerar os relatórios finais (`Enter` / `S` para confirmar ou `ESC` para continuar).
 
 ---
 

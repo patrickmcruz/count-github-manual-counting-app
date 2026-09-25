@@ -79,6 +79,11 @@ caminho_saida_ativo = None
 
 WINDOW_NAME = "Anotador de Multidoes (Ground Truth)"
 
+# Estado de Salvamento e Confirmação de Saída
+alteracoes_pendentes = False
+modal_confirmacao_ativo = False
+salvar_ao_finalizar = True
+
 # Botões interativos no HUD
 BTN_OPEN_IMAGE = (0, 0, 0, 0)
 BTN_ZOOM_IN = (0, 0, 0, 0)
@@ -87,6 +92,12 @@ BTN_RESET_ZOOM = (0, 0, 0, 0)
 BTN_UNDO = (0, 0, 0, 0)
 BTN_SAVE = (0, 0, 0, 0)
 BTN_FINISH = (0, 0, 0, 0)
+
+# Botões do Modal de Confirmação de Saída
+BTN_MODAL_CONFIRMAR_SALVAR = (0, 0, 0, 0)
+BTN_MODAL_SAIR_SEM_SALVAR = (0, 0, 0, 0)
+BTN_MODAL_CANCELAR = (0, 0, 0, 0)
+
 
 
 def obter_resolucao_tela(default_w: int = 1920, default_h: int = 1080):
@@ -273,7 +284,7 @@ def selecionar_imagem(caminho_solicitado: Path = None, pasta_input: Path = None)
 def carregar_imagem_no_app(caminho_nova_img: Path, pasta_saida_base: Path = None, salvar_atual: bool = True) -> bool:
     """Carrega uma nova imagem no aplicativo, salvando o progresso da anterior e ajustando a UI."""
     global img_base, img_thumb, caminho_img_ativo, caminho_saida_ativo, coordenadas
-    global center_x, center_y, zoom_level, status_mensagem, status_cor
+    global center_x, center_y, zoom_level, status_mensagem, status_cor, alteracoes_pendentes
 
     if caminho_nova_img is None or not caminho_nova_img.exists():
         return False
@@ -337,6 +348,7 @@ def carregar_imagem_no_app(caminho_nova_img: Path, pasta_saida_base: Path = None
         status_mensagem = f"Imagem carregada: {caminho_nova_img.name} (0 pts)"
         status_cor = (147, 197, 253)
 
+    alteracoes_pendentes = False
     atualizar_canvas()
     return True
 
@@ -448,7 +460,7 @@ def mover_pan(dx_screen: int, dy_screen: int):
 
 def salvar_checkpoint(silencioso: bool = False):
     """Salva o progresso atual em disco (checkpoint) sem fechar a aplicação."""
-    global status_mensagem, status_cor
+    global status_mensagem, status_cor, alteracoes_pendentes
     if caminho_saida_ativo is None or caminho_img_ativo is None:
         return
 
@@ -479,6 +491,7 @@ def salvar_checkpoint(silencioso: bool = False):
         with open(dest, "w", encoding="utf-8") as f:
             json.dump(checkpoint_data, f, indent=2, ensure_ascii=False)
 
+    alteracoes_pendentes = False
     hora_str = time.strftime("%H:%M:%S")
     status_mensagem = f"✓ Salvo as {hora_str} ({len(coordenadas)} pts)"
     status_cor = (74, 222, 128)
@@ -665,14 +678,151 @@ def atualizar_canvas():
     cv2.rectangle(img_display, (f_x1, f_y1), (f_x2, f_y2), (255, 255, 255), 1)
     cv2.putText(img_display, "V Finalizar", (f_x1 + 16, f_y1 + 23), cv2.FONT_HERSHEY_SIMPLEX, 0.50, (255, 255, 255), 2, cv2.LINE_AA)
 
+    # 4. Modal de Confirmação de Saída (se ativo)
+    if modal_confirmacao_ativo:
+        desenhar_modal_confirmacao(img_display)
+
     cv2.imshow(WINDOW_NAME, img_display)
+
+
+def desenhar_botao_modal(img, rect, label, bg_color, border_color, text_color=(255, 255, 255), font_scale=0.50):
+    """Renderiza um botão retangular com texto perfeitamente centralizado no modal."""
+    x1, y1, x2, y2 = rect
+    cv2.rectangle(img, (x1, y1), (x2, y2), bg_color, -1)
+    cv2.rectangle(img, (x1, y1), (x2, y2), border_color, 2)
+    (tw, th), baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, 1)
+    tx = x1 + (x2 - x1 - tw) // 2
+    ty = y1 + (y2 - y1 + th) // 2
+    cv2.putText(img, label, (tx, ty), cv2.FONT_HERSHEY_SIMPLEX, font_scale, text_color, 1, cv2.LINE_AA)
+
+
+def desenhar_modal_confirmacao(img):
+    """Renderiza a caixa de diálogo modal de confirmação de finalização sobre o canvas."""
+    global BTN_MODAL_CONFIRMAR_SALVAR, BTN_MODAL_SAIR_SEM_SALVAR, BTN_MODAL_CANCELAR
+
+    # Overlay escuro semi-transparente
+    overlay = img.copy()
+    cv2.rectangle(overlay, (0, 0), (screen_w, screen_h), (0, 0, 0), -1)
+    cv2.addWeighted(overlay, 0.65, img, 0.35, 0, img)
+
+    # Dimensões do card central
+    modal_w = min(720, screen_w - 40)
+    modal_h = 230
+    mx1 = (screen_w - modal_w) // 2
+    my1 = (screen_h - modal_h) // 2
+    mx2 = mx1 + modal_w
+    my2 = my1 + modal_h
+
+    # Cores conforme estado
+    if alteracoes_pendentes:
+        cor_destaque = (0, 180, 250)    # Âmbar / Laranja
+        cor_header_bg = (15, 23, 42)
+        titulo = "[ ! ] ATENCAO: ALTERACOES NAO SALVAS"
+        msg1 = f"Existem alteracoes pendentes nesta imagem ({len(coordenadas)} pontos totais)."
+        msg2 = "O que deseja fazer antes de sair do anotador?"
+    else:
+        cor_destaque = (74, 222, 128)   # Verde Esmeralda
+        cor_header_bg = (15, 23, 42)
+        titulo = "[ V ] CONFIRMAR FINALIZACAO"
+        msg1 = f"Todo o progresso esta salvo em disco ({len(coordenadas)} pontos anotados)."
+        msg2 = "Deseja finalizar a contagem e gerar todos os relatorios entregaveis?"
+
+    # Fundo do Card
+    cv2.rectangle(img, (mx1, my1), (mx2, my2), (24, 20, 16), -1)
+    cv2.rectangle(img, (mx1, my1), (mx2, my2), cor_destaque, 2)
+
+    # Barra de Título Superior
+    cv2.rectangle(img, (mx1 + 2, my1 + 2), (mx2 - 2, my1 + 45), cor_header_bg, -1)
+    cv2.line(img, (mx1 + 2, my1 + 45), (mx2 - 2, my1 + 45), cor_destaque, 1)
+    cv2.putText(img, titulo, (mx1 + 20, my1 + 31), cv2.FONT_HERSHEY_SIMPLEX, 0.65, cor_destaque, 2, cv2.LINE_AA)
+
+    # Mensagens no corpo
+    cv2.putText(img, msg1, (mx1 + 24, my1 + 82), cv2.FONT_HERSHEY_SIMPLEX, 0.52, (241, 245, 249), 1, cv2.LINE_AA)
+    cv2.putText(img, msg2, (mx1 + 24, my1 + 112), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (148, 163, 184), 1, cv2.LINE_AA)
+
+    # Botões
+    btn_y1 = my2 - 58
+    btn_y2 = my2 - 18
+
+    if alteracoes_pendentes:
+        # 3 Botões: [Salvar e Sair (S)] [Sair s/ Salvar (D)] [Cancelar (ESC)]
+        spacing = 14
+        margin_x = 20
+        btn_w = (modal_w - 2 * margin_x - 2 * spacing) // 3
+
+        b1_x1 = mx1 + margin_x
+        b1_x2 = b1_x1 + btn_w
+        BTN_MODAL_CONFIRMAR_SALVAR = (b1_x1, btn_y1, b1_x2, btn_y2)
+        desenhar_botao_modal(img, BTN_MODAL_CONFIRMAR_SALVAR, "Salvar e Sair (S)", (40, 150, 60), (74, 222, 128))
+
+        b2_x1 = b1_x2 + spacing
+        b2_x2 = b2_x1 + btn_w
+        BTN_MODAL_SAIR_SEM_SALVAR = (b2_x1, btn_y1, b2_x2, btn_y2)
+        desenhar_botao_modal(img, BTN_MODAL_SAIR_SEM_SALVAR, "Sair s/ Salvar (D)", (40, 40, 180), (248, 113, 113))
+
+        b3_x1 = b2_x2 + spacing
+        b3_x2 = mx2 - margin_x
+        BTN_MODAL_CANCELAR = (b3_x1, btn_y1, b3_x2, btn_y2)
+        desenhar_botao_modal(img, BTN_MODAL_CANCELAR, "Cancelar (ESC)", (45, 55, 72), (148, 163, 184))
+    else:
+        # 2 Botões: [Sim, Finalizar (Enter)] [Cancelar (ESC)]
+        BTN_MODAL_SAIR_SEM_SALVAR = (0, 0, 0, 0)
+        spacing = 20
+        margin_x = 36
+        btn_w = (modal_w - 2 * margin_x - spacing) // 2
+
+        b1_x1 = mx1 + margin_x
+        b1_x2 = b1_x1 + btn_w
+        BTN_MODAL_CONFIRMAR_SALVAR = (b1_x1, btn_y1, b1_x2, btn_y2)
+        desenhar_botao_modal(img, BTN_MODAL_CONFIRMAR_SALVAR, "Sim, Finalizar (Enter)", (40, 150, 60), (74, 222, 128))
+
+        b2_x1 = b1_x2 + spacing
+        b2_x2 = mx2 - margin_x
+        BTN_MODAL_CANCELAR = (b2_x1, btn_y1, b2_x2, btn_y2)
+        desenhar_botao_modal(img, BTN_MODAL_CANCELAR, "Cancelar (ESC)", (45, 55, 72), (148, 163, 184))
+
+
+def abrir_modal_finalizacao():
+    """Abre o modal visual de confirmação de finalização."""
+    global modal_confirmacao_ativo, status_mensagem, status_cor
+    if modal_confirmacao_ativo:
+        return
+    modal_confirmacao_ativo = True
+    if alteracoes_pendentes:
+        status_mensagem = "Atencao: alteracoes pendentes! Escolha uma opcao no modal."
+        status_cor = (0, 180, 250)
+    else:
+        status_mensagem = "Confirmar finalizacao? Escolha uma opcao no modal."
+        status_cor = (74, 222, 128)
+    print(f"[*] Modal de finalização exibido (alterações pendentes: {alteracoes_pendentes}).")
+    atualizar_canvas()
+
+
+def fechar_modal_e_finalizar(salvar: bool = True):
+    """Fecha o modal e define flag para encerrar a aplicação com ou sem salvamento."""
+    global modal_confirmacao_ativo, salvar_ao_finalizar, deve_encerrar
+    modal_confirmacao_ativo = False
+    salvar_ao_finalizar = salvar
+    deve_encerrar = True
+    print(f"[*] Finalizando aplicação (salvar entregáveis={salvar}).")
+
+
+def cancelar_modal():
+    """Cancela o modal e retorna à edição normal."""
+    global modal_confirmacao_ativo, status_mensagem, status_cor
+    modal_confirmacao_ativo = False
+    status_mensagem = "Finalizacao cancelada. Continuando anotacao..."
+    status_cor = (203, 213, 225)
+    print("[*] Finalização cancelada pelo usuário.")
+    atualizar_canvas()
 
 
 def desfazer_ultimo_ponto():
     """Remove o último ponto adicionado e atualiza a interface."""
-    global coordenadas, status_mensagem, status_cor
+    global coordenadas, status_mensagem, status_cor, alteracoes_pendentes
     if coordenadas:
         removido = coordenadas.pop()
+        alteracoes_pendentes = True
         status_mensagem = f"Ponto #{removido['id']} desfeito ({len(coordenadas)} restantes)"
         status_cor = (147, 197, 253)
         print(f"[-] Ponto #{removido['id']} desfeito em: (x={removido['x']}, y={removido['y']}) | Restantes: {len(coordenadas)}")
@@ -688,6 +838,22 @@ def callback_mouse(event, x, y, flags, param):
     """Manipula eventos do mouse: Zoom por scroll, Pan por arraste e marcação de pontos."""
     global coordenadas, deve_encerrar, status_mensagem, status_cor
     global is_dragging_pan, pan_start_screen, pan_start_center, center_x, center_y
+    global modal_confirmacao_ativo, alteracoes_pendentes
+    global BTN_MODAL_CONFIRMAR_SALVAR, BTN_MODAL_SAIR_SEM_SALVAR, BTN_MODAL_CANCELAR
+
+    # Se o modal de confirmação estiver ativo, intercepta cliques exclusivamente no modal
+    if modal_confirmacao_ativo:
+        if event == cv2.EVENT_LBUTTONDOWN:
+            if BTN_MODAL_CONFIRMAR_SALVAR[0] <= x <= BTN_MODAL_CONFIRMAR_SALVAR[2] and BTN_MODAL_CONFIRMAR_SALVAR[1] <= y <= BTN_MODAL_CONFIRMAR_SALVAR[3]:
+                fechar_modal_e_finalizar(salvar=True)
+                return
+            elif alteracoes_pendentes and BTN_MODAL_SAIR_SEM_SALVAR[0] <= x <= BTN_MODAL_SAIR_SEM_SALVAR[2] and BTN_MODAL_SAIR_SEM_SALVAR[1] <= y <= BTN_MODAL_SAIR_SEM_SALVAR[3]:
+                fechar_modal_e_finalizar(salvar=False)
+                return
+            elif BTN_MODAL_CANCELAR[0] <= x <= BTN_MODAL_CANCELAR[2] and BTN_MODAL_CANCELAR[1] <= y <= BTN_MODAL_CANCELAR[3]:
+                cancelar_modal()
+                return
+        return
 
     # Se nenhuma imagem foi aberta ainda, permite apenas interação com HUD
     if img_base is None and y > HUD_HEIGHT:
@@ -750,7 +916,10 @@ def callback_mouse(event, x, y, flags, param):
                 return
             elif BTN_FINISH[0] <= x <= BTN_FINISH[2] and BTN_FINISH[1] <= y <= BTN_FINISH[3]:
                 print("[*] Botão 'Finalizar' acionado.")
-                deve_encerrar = True
+                if img_base is None:
+                    deve_encerrar = True
+                else:
+                    abrir_modal_finalizacao()
                 return
             return
 
@@ -768,6 +937,7 @@ def callback_mouse(event, x, y, flags, param):
 
             novo_id = len(coordenadas) + 1
             coordenadas.append({"id": novo_id, "x": orig_x, "y": orig_y})
+            alteracoes_pendentes = True
             status_mensagem = f"Ponto #{novo_id} anotado em ({orig_x}, {orig_y}) | Total: {len(coordenadas)}"
             status_cor = (203, 213, 225)
             print(f"[+] Ponto #{novo_id} anotado: Tela=({x}, {y}) -> Original=({orig_x}, {orig_y}) | Total: {len(coordenadas)}")
@@ -816,7 +986,7 @@ def carregar_anotacoes(caminho_arquivo: Path, img_shape=None) -> int:
 def main():
     global img_base, img_thumb, raio_marcador_display, deve_encerrar, caminho_img_ativo, caminho_saida_ativo
     global screen_w, screen_h, is_fullscreen, status_mensagem, status_cor, space_is_pressed
-    global center_x, center_y, zoom_level
+    global center_x, center_y, zoom_level, modal_confirmacao_ativo, alteracoes_pendentes, salvar_ao_finalizar
 
     parser = argparse.ArgumentParser(
         description="Anotador Manual de Pontos (Ground Truth) para Contagem de Pessoas em Alta Resolução",
@@ -956,6 +1126,21 @@ def main():
 
         key = raw_key & 0xFF
 
+        # Se o modal de confirmação de saída estiver ativo, processa exclusivamente suas teclas
+        if modal_confirmacao_ativo:
+            # Enter ou S: Salvar e Finalizar
+            if raw_key in (10, 13) or key in (ord("s"), ord("S")):
+                fechar_modal_e_finalizar(salvar=True)
+                break
+            # D ou X: Sair sem salvar (se houver alterações pendentes)
+            elif alteracoes_pendentes and key in (ord("d"), ord("D"), ord("x"), ord("X")):
+                fechar_modal_e_finalizar(salvar=False)
+                break
+            # ESC ou C: Cancelar modal e voltar a anotar
+            elif raw_key == 27 or key in (27, ord("c"), ord("C")):
+                cancelar_modal()
+            continue
+
         # Detecta barra de espaço para pan com o mouse
         if key == 32:
             space_is_pressed = True
@@ -971,7 +1156,9 @@ def main():
         # 2. Finalizar e Encerrar: 'f' / 'F', ESC (27)
         elif raw_key == 27 or key in [ord("f"), ord("F"), 27]:
             print("[*] Comando de finalização acionado.")
-            break
+            if img_base is None:
+                break
+            abrir_modal_finalizacao()
 
         # 3. Desfazer: Ctrl+Z (26), 'z'/'Z', 'u'/'U', Backspace (8), Delete (127, 65535)
         elif raw_key in (26, 8, 127, 65535) or key in (26, ord("z"), ord("Z"), ord("u"), ord("U"), 8, 127):
@@ -1019,6 +1206,7 @@ def main():
             if coordenadas:
                 print("[!] Limpando todas as marcações.")
                 coordenadas.clear()
+                alteracoes_pendentes = True
                 status_mensagem = "Todas as anotações foram limpas"
                 status_cor = (248, 113, 113)
                 atualizar_canvas()
@@ -1027,6 +1215,12 @@ def main():
 
     if caminho_img_ativo is None or img_base is None or caminho_saida_ativo is None:
         print("[*] Aplicação encerrada sem imagem ativa.")
+        return
+
+    if not salvar_ao_finalizar:
+        print("\n" + "=" * 76)
+        print("   [!] APLICAÇÃO ENCERRADA SEM SALVAR ALTERAÇÕES RECENTES.")
+        print("=" * 76 + "\n")
         return
 
     # --------------------------------------------------------------------------

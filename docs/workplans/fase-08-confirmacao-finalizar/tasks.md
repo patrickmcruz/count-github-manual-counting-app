@@ -8,5 +8,5 @@
 - [x] Atualizar `README.md` com as instruções do novo comportamento de confirmação.
 - [x] Testar cenários: saída com alterações pendentes (salvar vs descartar vs cancelar) e saída com tudo salvo.
 - [x] Elaborar `walkthrough.md` com evidências.
-- [ ] Merge da branch `feat/fase-08-confirmacao-finalizar` em `develop`.
-- [ ] Merge da branch `develop` em `main`.
+- [x] Merge da branch `feat/fase-08-confirmacao-finalizar` em `develop`.
+- [x] Merge da branch `develop` em `main`.

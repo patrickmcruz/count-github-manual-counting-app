@@ -57,13 +57,17 @@ Você só precisa ter o **Python** instalado no seu Windows:
 | **Tamanho do Marcador** | Teclas **`+`** e **`-`** para aumentar/diminuir o ponto na sua tela |
 | **Tela Cheia** | Tecla **`F11`** para alternar entre tela cheia e janela |
 
-### 🛡️ Proteção contra Perda de Dados ao Finalizar
-Ao acionar **Finalizar** (`F` / `ESC` ou botão na barra superior), o aplicativo verifica se existem alterações pendentes:
-- **Com alterações não salvas:** Exibe alerta em destaque âmbar com 3 opções:
-  - `[ Salvar e Sair (S) ]` (Atalho: `S` ou `Enter`): grava os dados e gera os relatórios finais.
-  - `[ Sair sem Salvar (D) ]` (Atalho: `D` ou `X`): descarta modificações recentes e encerra.
-  - `[ Cancelar (ESC) ]` (Atalho: `ESC` ou `C`): cancela a saída e continua anotando.
-- **Com tudo salvo previamente:** Exibe confirmação simples para gerar os relatórios finais (`Enter` / `S` para confirmar ou `ESC` para continuar).
+### 🛡️ Inicialização em Espera (Standby) e Saída Segura
+- **Inicialização Limpa:** Ao abrir o programa, ele entra diretamente em modo de espera (Standby), permitindo que você escolha com calma a foto a ser anotada pelo botão **`[ Abrir (O) ]`** ou saia imediatamente pelo botão **`[ X Sair ]`**.
+- **Ao Acionar Finalizar/Sair:** Pressione `F`, `ESC` ou clique no botão superior. O aplicativo avalia o estado das marcações:
+  - **Com alterações não salvas:** Exibe alerta em destaque âmbar com 3 opções:
+    - `[ Salvar e Sair (S) ]` (Atalho: `S` ou `Enter`): grava os dados e gera os relatórios finais.
+    - `[ Sair s/ Salvar (D) ]` (Atalho: `D` ou `X`): descarta modificações recentes e encerra.
+    - `[ Cancelar (ESC) ]` (Atalho: `ESC` ou clique fora do modal): fecha o aviso e continua anotando.
+  - **Com tudo salvo previamente / Sem pendências:** Exibe opções claras para:
+    - `[ Finalizar e Salvar (S) ]`: consolida os relatórios finais da contagem.
+    - `[ Sair do App (D) ]`: encerra o aplicativo diretamente sem gerar novos relatórios.
+    - `[ Cancelar (ESC) ]`: volta à tela de anotação.
 
 ---
 

@@ -36,8 +36,12 @@ import cv2
 import numpy as np
 import pandas as pd
 
-# Resolução de diretórios do aplicativo
-APP_ROOT = Path(__file__).resolve().parent
+# Resolução de diretórios do aplicativo (compatível com script Python e executável PyInstaller)
+if getattr(sys, "frozen", False):
+    APP_ROOT = Path(sys.executable).resolve().parent
+else:
+    APP_ROOT = Path(__file__).resolve().parent
+
 DEFAULT_INPUT_DIR = APP_ROOT / "data" / "input"
 DEFAULT_OUTPUT_DIR = APP_ROOT / "data" / "ground_truth"
 
@@ -90,6 +94,7 @@ modo_mao_ativo = False
 
 # Botões interativos no HUD
 BTN_OPEN_IMAGE = (0, 0, 0, 0)
+BTN_SELECT_IMAGE = (0, 0, 0, 0)
 BTN_HAND_PAN = (0, 0, 0, 0)
 BTN_ZOOM_IN = (0, 0, 0, 0)
 BTN_ZOOM_OUT = (0, 0, 0, 0)
@@ -167,8 +172,7 @@ def abrir_dialogo_arquivo(pasta_inicial: Path = None) -> Path:
             title="Selecione a Imagem para Contagem de Pessoas",
             initialdir=diretorio,
             filetypes=[
-                ("Imagens Aéreas", "*.jpg *.jpeg *.png *.bmp *.tif *.tiff *.JPG *.JPEG *.PNG"),
-                ("Todos os arquivos", "*.*")
+                ("Imagens Aéreas", "*.jpg *.jpeg *.png *.bmp *.tif *.tiff *.webp *.JPG *.JPEG *.PNG *.BMP *.TIF *.TIFF *.WEBP"),
             ]
         )
         root.update()
@@ -186,7 +190,7 @@ def abrir_dialogo_arquivo(pasta_inicial: Path = None) -> Path:
         import subprocess
         if shutil.which("zenity"):
             try:
-                filtro = "--file-filter=Imagens (*.jpg, *.png) | *.jpg *.jpeg *.png *.bmp *.tif *.tiff *.JPG *.JPEG *.PNG"
+                filtro = "--file-filter=Imagens (*.jpg, *.jpeg, *.png, *.bmp, *.tif, *.tiff, *.webp) | *.jpg *.jpeg *.png *.bmp *.tif *.tiff *.webp *.JPG *.JPEG *.PNG *.BMP *.TIF *.TIFF *.WEBP"
                 cmd = ["zenity", "--file-selection", "--title=Selecione a Imagem para Contar", filtro]
                 if pasta_inicial and pasta_inicial.exists():
                     cmd.append(f"--filename={pasta_inicial.resolve()}/")
@@ -201,7 +205,7 @@ def abrir_dialogo_arquivo(pasta_inicial: Path = None) -> Path:
         # 3. Tentativa via kdialog no Linux (KDE)
         if shutil.which("kdialog"):
             try:
-                cmd = ["kdialog", "--getopenfilename", str(pasta_inicial or "."), "*.jpg *.jpeg *.png *.JPG *.JPEG *.PNG"]
+                cmd = ["kdialog", "--getopenfilename", str(pasta_inicial or "."), "*.jpg *.jpeg *.png *.bmp *.tif *.tiff *.webp *.JPG *.JPEG *.PNG *.BMP *.TIF *.TIFF *.WEBP"]
                 res = subprocess.run(cmd, capture_output=True, text=True, check=False)
                 if res.returncode == 0 and res.stdout.strip():
                     p = Path(res.stdout.strip())
@@ -224,7 +228,7 @@ def selecionar_imagem(caminho_solicitado: Path = None, pasta_input: Path = None)
     if caminho_solicitado and caminho_solicitado.exists() and caminho_solicitado.is_file():
         return caminho_solicitado
 
-    extensoes = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"}
+    extensoes = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff", ".webp"}
 
     # Se uma imagem foi passada por nome simples, procura em data/input/
     if caminho_solicitado and pasta_input and pasta_input.exists():
@@ -364,6 +368,15 @@ def carregar_imagem_no_app(caminho_nova_img: Path, pasta_saida_base: Path = None
     alteracoes_pendentes = False
     atualizar_canvas()
     return True
+
+
+def solicitar_selecao_de_imagem():
+    """Solicita a abertura do seletor no loop principal, sem bloquear o callback do OpenCV."""
+    global solicitacao_abrir_imagem, status_mensagem, status_cor
+    solicitacao_abrir_imagem = True
+    status_mensagem = "Abrindo seletor de arquivos..."
+    status_cor = (250, 204, 21)
+    atualizar_canvas()
 
 
 def acao_selecionar_imagem_usuario():
@@ -531,7 +544,7 @@ def salvar_checkpoint(silencioso: bool = False):
 
 def atualizar_canvas():
     """Renderiza a região visível em alta resolução, projeta os pontos e o HUD."""
-    global img_display, BTN_OPEN_IMAGE, BTN_HAND_PAN, BTN_ZOOM_IN, BTN_ZOOM_OUT, BTN_RESET_ZOOM, BTN_UNDO, BTN_SAVE, BTN_FINISH
+    global img_display, BTN_OPEN_IMAGE, BTN_SELECT_IMAGE, BTN_HAND_PAN, BTN_ZOOM_IN, BTN_ZOOM_OUT, BTN_RESET_ZOOM, BTN_UNDO, BTN_SAVE, BTN_FINISH
     global fit_w, fit_h, offset_x, offset_y, scale_fit
 
     w = screen_w
@@ -581,11 +594,23 @@ def atualizar_canvas():
         cv2.putText(img_display, "Nenhuma imagem selecionada no momento.", (w // 2 - 220, screen_h // 2 + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (148, 163, 184), 1, cv2.LINE_AA)
         cv2.putText(img_display, "Clique no botao [ Abrir (O) ] acima para escolher uma foto no seu computador.", (w // 2 - 380, screen_h // 2 + 50), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (56, 189, 248), 1, cv2.LINE_AA)
 
+        # Botao central: usa o mesmo fluxo do botao Abrir (O)
+        select_w, select_h = 260, 52
+        select_x1 = (w - select_w) // 2
+        select_y1 = screen_h // 2 + 82
+        select_x2, select_y2 = select_x1 + select_w, select_y1 + select_h
+        BTN_SELECT_IMAGE = (select_x1, select_y1, select_x2, select_y2)
+        cv2.rectangle(img_display, (select_x1, select_y1), (select_x2, select_y2), (30, 120, 180), -1)
+        cv2.rectangle(img_display, (select_x1, select_y1), (select_x2, select_y2), (125, 211, 252), 2)
+        cv2.putText(img_display, "Selecionar imagem", (select_x1 + 35, select_y1 + 33), cv2.FONT_HERSHEY_SIMPLEX, 0.62, (255, 255, 255), 2, cv2.LINE_AA)
+
         if modal_confirmacao_ativo:
             desenhar_modal_confirmacao(img_display)
 
         cv2.imshow(WINDOW_NAME, img_display)
         return
+
+    BTN_SELECT_IMAGE = (0, 0, 0, 0)
 
     calcular_roi()
 
@@ -896,7 +921,7 @@ def callback_mouse(event, x, y, flags, param):
     global is_dragging_pan, pan_start_screen, pan_start_center, center_x, center_y
     global modal_confirmacao_ativo, alteracoes_pendentes, modo_mao_ativo, solicitacao_abrir_imagem
     global BTN_MODAL_CONFIRMAR_SALVAR, BTN_MODAL_SAIR_SEM_SALVAR, BTN_MODAL_CANCELAR, MODAL_RECT
-    global BTN_OPEN_IMAGE, BTN_HAND_PAN, BTN_ZOOM_IN, BTN_ZOOM_OUT, BTN_RESET_ZOOM, BTN_UNDO, BTN_SAVE, BTN_FINISH
+    global BTN_OPEN_IMAGE, BTN_SELECT_IMAGE, BTN_HAND_PAN, BTN_ZOOM_IN, BTN_ZOOM_OUT, BTN_RESET_ZOOM, BTN_UNDO, BTN_SAVE, BTN_FINISH
 
     # Se o modal de confirmação estiver ativo, intercepta cliques exclusivamente no modal
     if modal_confirmacao_ativo:
@@ -918,6 +943,11 @@ def callback_mouse(event, x, y, flags, param):
         return
 
     # Se nenhuma imagem foi aberta ainda, permite apenas interação com HUD
+    if event == cv2.EVENT_LBUTTONDOWN and img_base is None:
+        if BTN_SELECT_IMAGE[0] <= x <= BTN_SELECT_IMAGE[2] and BTN_SELECT_IMAGE[1] <= y <= BTN_SELECT_IMAGE[3]:
+            solicitar_selecao_de_imagem()
+            return
+
     if img_base is None and y > HUD_HEIGHT:
         return
 
@@ -959,10 +989,7 @@ def callback_mouse(event, x, y, flags, param):
         # Clique no HUD
         if y <= HUD_HEIGHT:
             if BTN_OPEN_IMAGE[0] <= x <= BTN_OPEN_IMAGE[2] and BTN_OPEN_IMAGE[1] <= y <= BTN_OPEN_IMAGE[3]:
-                solicitacao_abrir_imagem = True
-                status_mensagem = "Abrindo seletor de arquivos..."
-                status_cor = (250, 204, 21)
-                atualizar_canvas()
+                solicitar_selecao_de_imagem()
                 return
             elif BTN_HAND_PAN[0] <= x <= BTN_HAND_PAN[2] and BTN_HAND_PAN[1] <= y <= BTN_HAND_PAN[3]:
                 alternar_modo_mao()
@@ -1325,6 +1352,7 @@ def main():
     h_orig, w_orig = img_base.shape[:2]
 
     p_csv_stem = pasta_destino / f"pontos_ground_truth_{stem}.csv"
+    p_p2pnet = pasta_destino / f"p2pnet_{stem}.txt"
     p_json_stem = pasta_destino / f"pontos_ground_truth_{stem}.json"
     p_json_aligned = pasta_destino / f"ground_truth_aligned_1280x1024_{stem}.json"
     p_json_aligned_canon = pasta_destino / "ground_truth_aligned_1280x1024.json"
@@ -1335,6 +1363,11 @@ def main():
     # 1. Salvar CSV
     df = pd.DataFrame(coordenadas)
     df.to_csv(p_csv_stem, index=False)
+
+    # 1b. Salvar coordenadas no formato simples esperado pelo P2PNet (x y)
+    with open(p_p2pnet, "w", encoding="utf-8", newline="\n") as f:
+        for pt in coordenadas:
+            f.write(f"{int(pt['x'])} {int(pt['y'])}\n")
 
     # 2. Salvar JSON de Pontos RAW
     telemetria_gt = {
@@ -1399,6 +1432,7 @@ def main():
             "checkpoint": f"checkpoint_{stem}.json",
             "pontos_raw_json": p_json_stem.name,
             "pontos_raw_csv": p_csv_stem.name,
+            "p2pnet_txt": p_p2pnet.name,
             "pontos_alinhados_json": p_json_aligned.name,
             "auditoria_visual_jpg": p_img.name,
         },
@@ -1413,6 +1447,7 @@ def main():
     print(f"  [✓] Imagem Base Utilizada:     {caminho_img_ativo.name} ({w_orig}x{h_orig} px)")
     print(f"  [✓] Total de Pessoas Anotadas: {len(coordenadas)}")
     print(f"  [✓] Tabela CSV de Coordenadas: {p_csv_stem.name}")
+    print(f"  [✓] Coordenadas P2PNet (x y):  {p_p2pnet.name}")
     print(f"  [✓] Metadados e Pontos JSON:   {p_json_stem.name}")
     print(f"  [✓] GT Alinhado (1280x1024):   {p_json_aligned.name}")
     print(f"  [✓] Metadados Ficha Técnica:   {p_meta.name}")

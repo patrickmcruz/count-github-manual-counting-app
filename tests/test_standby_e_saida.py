@@ -127,10 +127,38 @@ def test_clique_backdrop_modal():
     print("      [✓] Backdrop click cancela o modal com segurança.")
 
 
+def test_execucao_main_standby():
+    print("[*] 6. Testando execução real da função main() no modo Standby...")
+    app.img_base = None
+    app.caminho_img_ativo = None
+    app.modal_confirmacao_ativo = False
+    app.deve_encerrar = False
+    app.solicitacao_abrir_imagem = False
+
+    def mock_wait_key(*args, **kwargs):
+        # Na primeira chamada do loop, valida que solicitacao_abrir_imagem foi acessada e encerra
+        app.deve_encerrar = True
+        return -1
+
+    with patch("sys.argv", ["app.py", "--tela", "800x600", "--janela"]), \
+         patch("cv2.namedWindow"), \
+         patch("cv2.resizeWindow"), \
+         patch("cv2.setMouseCallback"), \
+         patch("cv2.imshow"), \
+         patch("cv2.destroyAllWindows"), \
+         patch("cv2.getWindowImageRect", return_value=(0, 0, 800, 600)), \
+         patch("cv2.waitKeyEx", side_effect=mock_wait_key):
+        app.main()
+
+    assert app.deve_encerrar is True
+    print("      [✓] main() executou e encerrou no Standby sem qualquer exceção.")
+
+
 if __name__ == "__main__":
     test_inicializacao_standby()
     test_clique_sair_no_standby()
     test_solicitacao_abrir_imagem()
     test_cancelamento_abertura_e_saida()
     test_clique_backdrop_modal()
+    test_execucao_main_standby()
     print("\n[✓ SUCESSO] Todos os testes de Standby e Saída passaram com 100% de sucesso!")

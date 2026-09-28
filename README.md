@@ -103,3 +103,4 @@ Caso queira distribuir o aplicativo para colegas que **não possuem o Python ins
 ## 📖 Documentos Complementares
 - [**Guia de Boas Práticas do Anotador**](docs/GUIA_DO_ANOTADOR.md): Critérios para pessoas sob árvores, sombras e bordas.
 - [**Protocolo de Distribuição das 50 Imagens**](docs/PROTOCOLO_ANOTACAO_50_IMGS.md): Divisão de trabalho e controle de lotes.
+- [**Guia Técnico de Compilação do Executável Windows**](docs/GUIA_COMPILACAO_EXECUTAVEL_WINDOWS.md): Arquitetura PyInstaller, resolução de diretórios e empacotamento.

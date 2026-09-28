@@ -1,9 +1,9 @@
 @echo off
 chcp 65001 >nul
-title Anotador de Multidões (Ground Truth)
+title Contagem de Multidões (Ground Truth)
 
 echo ==============================================================
-echo    ANOTADOR MANUAL DE MULTIDÕES - IPPUC / RGBTCC
+echo    CONTAGEM MANUAL DE MULTIDÕES - IPPUC / RGBTCC
 echo ==============================================================
 echo.
 
@@ -56,7 +56,7 @@ if not exist ".venv\Scripts\python.exe" (
 )
 
 :: 3. Execução do Aplicativo
-echo [*] Iniciando o Anotador de Multidões...
+echo [*] Iniciando a Contagem de Multidões...
 .venv\Scripts\python.exe app.py %*
 
 if errorlevel 1 (

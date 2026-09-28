@@ -1061,7 +1061,7 @@ def carregar_anotacoes(caminho_arquivo: Path, img_shape=None) -> int:
 def main():
     global img_base, img_thumb, raio_marcador_display, deve_encerrar, caminho_img_ativo, caminho_saida_ativo
     global screen_w, screen_h, is_fullscreen, status_mensagem, status_cor, space_is_pressed
-    global center_x, center_y, zoom_level, modal_confirmacao_ativo, alteracoes_pendentes, salvar_ao_finalizar, modo_mao_ativo
+    global center_x, center_y, zoom_level, modal_confirmacao_ativo, alteracoes_pendentes, salvar_ao_finalizar, modo_mao_ativo, solicitacao_abrir_imagem
 
     parser = argparse.ArgumentParser(
         description="Anotador Manual de Pontos (Ground Truth) para Contagem de Pessoas em Alta Resolução",

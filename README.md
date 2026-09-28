@@ -86,6 +86,20 @@ Essa pasta conterá:
 
 ---
 
+## 📦 Como Gerar o Executável Windows (.exe Portável)
+
+Caso queira distribuir o aplicativo para colegas que **não possuem o Python instalado no computador**:
+
+1. Dê um duplo clique no arquivo:  
+   👉 **`build_executavel_windows.bat`**
+2. O script instalará o compilador `PyInstaller` e perguntará o formato desejado:
+   - **Opção 1 (Arquivo Único):** Gera `dist\ContagemMultidoes.exe` (um único arquivo fácil de compartilhar).
+   - **Opção 2 (Pasta Portável):** Gera a pasta `dist\ContagemMultidoes\` (abertura instantânea).
+3. Ao término, a pasta `dist/` conterá o executável e as pastas `data\input` e `data\ground_truth` prontas.
+4. Basta compactar a pasta gerada em `.zip` e repassar aos colegas. **Eles não precisarão instalar nada!**
+
+---
+
 ## 📖 Documentos Complementares
 - [**Guia de Boas Práticas do Anotador**](docs/GUIA_DO_ANOTADOR.md): Critérios para pessoas sob árvores, sombras e bordas.
 - [**Protocolo de Distribuição das 50 Imagens**](docs/PROTOCOLO_ANOTACAO_50_IMGS.md): Divisão de trabalho e controle de lotes.

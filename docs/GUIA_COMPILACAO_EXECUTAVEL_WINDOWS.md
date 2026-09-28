@@ -61,7 +61,7 @@ DEFAULT_OUTPUT_DIR = APP_ROOT / "data" / "ground_truth"
 ```
 
 Isso garante que:
-* As imagens de entrada sejam sempre lidas de: `pasta_do_executavel\data\input\`
+* A pasta do executável seja usada como referência inicial pelo seletor de imagens quando o usuário não escolher outra pasta.
 * Os relatórios e checkpoints sejam gravados em: `pasta_do_executavel\data\ground_truth\`
 
 ---
@@ -75,14 +75,12 @@ dist/
 ├── ContagemMultidoes.exe    <- Executável principal
 ├── COMO_USAR.txt            <- Instruções rápidas para o anotador
 └── data/
-    ├── input/               <- Coloque aqui as fotos do lote atribuído
     └── ground_truth/        <- Pasta onde os relatórios finais serão gerados
 ```
 
 ### Como enviar para o anotador:
-1. Copie as fotos do lote daquele colega para `dist\data\input\`.
-2. Compacte a pasta `dist` como `Lote_XX_Contagem.zip`.
-3. Envie o `.zip` para o colega. **Ele só precisará extrair e dar duplo clique no `ContagemMultidoes.exe`.**
+1. Compacte a pasta `dist` como `Lote_XX_Contagem.zip`.
+2. Envie o `.zip` para o colega. **Ele só precisará extrair, abrir o `ContagemMultidoes.exe` e selecionar as imagens pelo diálogo.**
 
 ---
 

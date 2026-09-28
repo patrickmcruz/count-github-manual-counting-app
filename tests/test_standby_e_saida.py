@@ -33,6 +33,7 @@ def test_inicializacao_standby():
     app.atualizar_canvas()
 
     assert app.img_display is not None, "Canvas deve ser renderizado mesmo sem imagem"
+    assert app.BTN_SELECT_IMAGE != (0, 0, 0, 0), "Botao central deve estar visivel no Standby"
     assert app.BTN_OPEN_IMAGE != (0, 0, 0, 0), "Botão [ Abrir (O) ] deve estar visível no Standby"
     assert app.BTN_FINISH != (0, 0, 0, 0), "Botão [ X Sair ] deve estar visível no Standby"
     assert app.BTN_HAND_PAN == (0, 0, 0, 0), "Botão Mão deve estar desativado sem imagem"
@@ -72,6 +73,11 @@ def test_solicitacao_abrir_imagem():
 
     app.callback_mouse(cv2.EVENT_LBUTTONDOWN, click_x, click_y, 0, None)
     assert app.solicitacao_abrir_imagem is True, "solicitacao_abrir_imagem deve ser ativada pelo clique"
+
+    app.solicitacao_abrir_imagem = False
+    sx1, sy1, sx2, sy2 = app.BTN_SELECT_IMAGE
+    app.callback_mouse(cv2.EVENT_LBUTTONDOWN, (sx1 + sx2) // 2, (sy1 + sy2) // 2, 0, None)
+    assert app.solicitacao_abrir_imagem is True, "botao central deve usar o mesmo fluxo de selecao"
     print("      [✓] solicitacao_abrir_imagem acionada com sucesso sem travar callback.")
 
 

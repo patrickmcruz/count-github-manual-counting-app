@@ -1,0 +1,7 @@
+INSTRUCOES DE USO DO APLICATIVO
+==============================
+1. Execute ContagemMultidoes.exe.
+2. Clique no botão para selecionar suas fotos JPG ou PNG.
+3. Clique na cabeça de cada pessoa encontrada, se não tiver cabeça clique na parte visível.
+4. Salve regularmente a contagem no botão "Salvar".
+5. Os relatorios serao gerados em data\ground_truth.

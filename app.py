@@ -83,6 +83,7 @@ WINDOW_NAME = "Anotador de Multidoes (Ground Truth)"
 alteracoes_pendentes = False
 modal_confirmacao_ativo = False
 salvar_ao_finalizar = True
+solicitacao_abrir_imagem = False
 
 # Modo de Ferramenta: Apontador/Marcador (False) ou Mão/Pan (True)
 modo_mao_ativo = False
@@ -101,6 +102,7 @@ BTN_FINISH = (0, 0, 0, 0)
 BTN_MODAL_CONFIRMAR_SALVAR = (0, 0, 0, 0)
 BTN_MODAL_SAIR_SEM_SALVAR = (0, 0, 0, 0)
 BTN_MODAL_CANCELAR = (0, 0, 0, 0)
+MODAL_RECT = (0, 0, 0, 0)
 
 
 
@@ -169,6 +171,7 @@ def abrir_dialogo_arquivo(pasta_inicial: Path = None) -> Path:
                 ("Todos os arquivos", "*.*")
             ]
         )
+        root.update()
         root.destroy()
         if caminho:
             p = Path(caminho)
@@ -206,6 +209,12 @@ def abrir_dialogo_arquivo(pasta_inicial: Path = None) -> Path:
                         return p
             except Exception:
                 pass
+
+    # Garante liberação de eventos e restabelecimento de foco no OpenCV
+    try:
+        cv2.waitKey(1)
+    except Exception:
+        pass
 
     return None
 
@@ -548,17 +557,32 @@ def atualizar_canvas():
         cv2.rectangle(img_display, (op_x1, op_y1), (op_x2, op_y2), (96, 165, 250), 1)
         cv2.putText(img_display, "Abrir (O)", (op_x1 + 12, op_y1 + 23), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (255, 255, 255), 1, cv2.LINE_AA)
 
-        # Botão: Ferramenta Mão (inativo em standby)
+        # Botão: Ferramenta Mão (inativo visualmente em standby)
         hp_x1, hp_y1, hp_x2, hp_y2 = w - 850, 8, w - 735, 42
-        BTN_HAND_PAN = (hp_x1, hp_y1, hp_x2, hp_y2)
+        BTN_HAND_PAN = (0, 0, 0, 0)
+        BTN_ZOOM_IN = (0, 0, 0, 0)
+        BTN_ZOOM_OUT = (0, 0, 0, 0)
+        BTN_RESET_ZOOM = (0, 0, 0, 0)
+        BTN_UNDO = (0, 0, 0, 0)
+        BTN_SAVE = (0, 0, 0, 0)
         cv2.rectangle(img_display, (hp_x1, hp_y1), (hp_x2, hp_y2), (30, 41, 59), -1)
         cv2.rectangle(img_display, (hp_x1, hp_y1), (hp_x2, hp_y2), (71, 85, 105), 1)
         cv2.putText(img_display, "Mao (H)", (hp_x1 + 14, hp_y1 + 23), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (100, 116, 139), 1, cv2.LINE_AA)
+
+        # Botão: Sair do Aplicativo (Standby)
+        ex_x1, ex_y1, ex_x2, ex_y2 = w - 200, 8, w - 65, 42
+        BTN_FINISH = (ex_x1, ex_y1, ex_x2, ex_y2)
+        cv2.rectangle(img_display, (ex_x1, ex_y1), (ex_x2, ex_y2), (40, 40, 70), -1)
+        cv2.rectangle(img_display, (ex_x1, ex_y1), (ex_x2, ex_y2), (248, 113, 113), 1)
+        cv2.putText(img_display, "X Sair", (ex_x1 + 35, ex_y1 + 23), cv2.FONT_HERSHEY_SIMPLEX, 0.50, (255, 255, 255), 2, cv2.LINE_AA)
 
         # Mensagem central
         cv2.putText(img_display, "ANOTADOR DE MULTIDOES - IPPUC / RGBTCC", (w // 2 - 320, screen_h // 2 - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.85, (255, 255, 255), 2, cv2.LINE_AA)
         cv2.putText(img_display, "Nenhuma imagem selecionada no momento.", (w // 2 - 220, screen_h // 2 + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (148, 163, 184), 1, cv2.LINE_AA)
         cv2.putText(img_display, "Clique no botao [ Abrir (O) ] acima para escolher uma foto no seu computador.", (w // 2 - 380, screen_h // 2 + 50), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (56, 189, 248), 1, cv2.LINE_AA)
+
+        if modal_confirmacao_ativo:
+            desenhar_modal_confirmacao(img_display)
 
         cv2.imshow(WINDOW_NAME, img_display)
         return
@@ -740,7 +764,7 @@ def desenhar_botao_modal(img, rect, label, bg_color, border_color, text_color=(2
 
 def desenhar_modal_confirmacao(img):
     """Renderiza a caixa de diálogo modal de confirmação de finalização sobre o canvas."""
-    global BTN_MODAL_CONFIRMAR_SALVAR, BTN_MODAL_SAIR_SEM_SALVAR, BTN_MODAL_CANCELAR
+    global BTN_MODAL_CONFIRMAR_SALVAR, BTN_MODAL_SAIR_SEM_SALVAR, BTN_MODAL_CANCELAR, MODAL_RECT
 
     # Overlay escuro semi-transparente
     overlay = img.copy()
@@ -754,6 +778,7 @@ def desenhar_modal_confirmacao(img):
     my1 = (screen_h - modal_h) // 2
     mx2 = mx1 + modal_w
     my2 = my1 + modal_h
+    MODAL_RECT = (mx1, my1, mx2, my2)
 
     # Cores conforme estado
     if alteracoes_pendentes:
@@ -785,42 +810,31 @@ def desenhar_modal_confirmacao(img):
     # Botões
     btn_y1 = my2 - 58
     btn_y2 = my2 - 18
+    spacing = 14
+    margin_x = 20
+    btn_w = (modal_w - 2 * margin_x - 2 * spacing) // 3
+
+    b1_x1 = mx1 + margin_x
+    b1_x2 = b1_x1 + btn_w
+    BTN_MODAL_CONFIRMAR_SALVAR = (b1_x1, btn_y1, b1_x2, btn_y2)
+
+    b2_x1 = b1_x2 + spacing
+    b2_x2 = b2_x1 + btn_w
+    BTN_MODAL_SAIR_SEM_SALVAR = (b2_x1, btn_y1, b2_x2, btn_y2)
+
+    b3_x1 = b2_x2 + spacing
+    b3_x2 = mx2 - margin_x
+    BTN_MODAL_CANCELAR = (b3_x1, btn_y1, b3_x2, btn_y2)
 
     if alteracoes_pendentes:
         # 3 Botões: [Salvar e Sair (S)] [Sair s/ Salvar (D)] [Cancelar (ESC)]
-        spacing = 14
-        margin_x = 20
-        btn_w = (modal_w - 2 * margin_x - 2 * spacing) // 3
-
-        b1_x1 = mx1 + margin_x
-        b1_x2 = b1_x1 + btn_w
-        BTN_MODAL_CONFIRMAR_SALVAR = (b1_x1, btn_y1, b1_x2, btn_y2)
         desenhar_botao_modal(img, BTN_MODAL_CONFIRMAR_SALVAR, "Salvar e Sair (S)", (40, 150, 60), (74, 222, 128))
-
-        b2_x1 = b1_x2 + spacing
-        b2_x2 = b2_x1 + btn_w
-        BTN_MODAL_SAIR_SEM_SALVAR = (b2_x1, btn_y1, b2_x2, btn_y2)
         desenhar_botao_modal(img, BTN_MODAL_SAIR_SEM_SALVAR, "Sair s/ Salvar (D)", (40, 40, 180), (248, 113, 113))
-
-        b3_x1 = b2_x2 + spacing
-        b3_x2 = mx2 - margin_x
-        BTN_MODAL_CANCELAR = (b3_x1, btn_y1, b3_x2, btn_y2)
         desenhar_botao_modal(img, BTN_MODAL_CANCELAR, "Cancelar (ESC)", (45, 55, 72), (148, 163, 184))
     else:
-        # 2 Botões: [Sim, Finalizar (Enter)] [Cancelar (ESC)]
-        BTN_MODAL_SAIR_SEM_SALVAR = (0, 0, 0, 0)
-        spacing = 20
-        margin_x = 36
-        btn_w = (modal_w - 2 * margin_x - spacing) // 2
-
-        b1_x1 = mx1 + margin_x
-        b1_x2 = b1_x1 + btn_w
-        BTN_MODAL_CONFIRMAR_SALVAR = (b1_x1, btn_y1, b1_x2, btn_y2)
-        desenhar_botao_modal(img, BTN_MODAL_CONFIRMAR_SALVAR, "Sim, Finalizar (Enter)", (40, 150, 60), (74, 222, 128))
-
-        b2_x1 = b1_x2 + spacing
-        b2_x2 = mx2 - margin_x
-        BTN_MODAL_CANCELAR = (b2_x1, btn_y1, b2_x2, btn_y2)
+        # 3 Botões: [Finalizar e Salvar (S)] [Sair do App (D)] [Cancelar (ESC)]
+        desenhar_botao_modal(img, BTN_MODAL_CONFIRMAR_SALVAR, "Finalizar e Salvar (S)", (40, 150, 60), (74, 222, 128))
+        desenhar_botao_modal(img, BTN_MODAL_SAIR_SEM_SALVAR, "Sair do App (D)", (40, 40, 180), (248, 113, 113))
         desenhar_botao_modal(img, BTN_MODAL_CANCELAR, "Cancelar (ESC)", (45, 55, 72), (148, 163, 184))
 
 
@@ -880,22 +894,27 @@ def callback_mouse(event, x, y, flags, param):
     """Manipula eventos do mouse: Zoom por scroll, Pan por arraste e marcação de pontos."""
     global coordenadas, deve_encerrar, status_mensagem, status_cor
     global is_dragging_pan, pan_start_screen, pan_start_center, center_x, center_y
-    global modal_confirmacao_ativo, alteracoes_pendentes, modo_mao_ativo
-    global BTN_MODAL_CONFIRMAR_SALVAR, BTN_MODAL_SAIR_SEM_SALVAR, BTN_MODAL_CANCELAR
+    global modal_confirmacao_ativo, alteracoes_pendentes, modo_mao_ativo, solicitacao_abrir_imagem
+    global BTN_MODAL_CONFIRMAR_SALVAR, BTN_MODAL_SAIR_SEM_SALVAR, BTN_MODAL_CANCELAR, MODAL_RECT
     global BTN_OPEN_IMAGE, BTN_HAND_PAN, BTN_ZOOM_IN, BTN_ZOOM_OUT, BTN_RESET_ZOOM, BTN_UNDO, BTN_SAVE, BTN_FINISH
 
     # Se o modal de confirmação estiver ativo, intercepta cliques exclusivamente no modal
     if modal_confirmacao_ativo:
-        if event == cv2.EVENT_LBUTTONDOWN:
+        if event in (cv2.EVENT_LBUTTONDOWN, cv2.EVENT_LBUTTONUP):
             if BTN_MODAL_CONFIRMAR_SALVAR[0] <= x <= BTN_MODAL_CONFIRMAR_SALVAR[2] and BTN_MODAL_CONFIRMAR_SALVAR[1] <= y <= BTN_MODAL_CONFIRMAR_SALVAR[3]:
                 fechar_modal_e_finalizar(salvar=True)
                 return
-            elif alteracoes_pendentes and BTN_MODAL_SAIR_SEM_SALVAR[0] <= x <= BTN_MODAL_SAIR_SEM_SALVAR[2] and BTN_MODAL_SAIR_SEM_SALVAR[1] <= y <= BTN_MODAL_SAIR_SEM_SALVAR[3]:
+            elif BTN_MODAL_SAIR_SEM_SALVAR[0] <= x <= BTN_MODAL_SAIR_SEM_SALVAR[2] and BTN_MODAL_SAIR_SEM_SALVAR[1] <= y <= BTN_MODAL_SAIR_SEM_SALVAR[3]:
                 fechar_modal_e_finalizar(salvar=False)
                 return
             elif BTN_MODAL_CANCELAR[0] <= x <= BTN_MODAL_CANCELAR[2] and BTN_MODAL_CANCELAR[1] <= y <= BTN_MODAL_CANCELAR[3]:
                 cancelar_modal()
                 return
+            elif event == cv2.EVENT_LBUTTONDOWN and MODAL_RECT != (0, 0, 0, 0):
+                # Backdrop click: clique fora do card central cancela o modal
+                if not (MODAL_RECT[0] <= x <= MODAL_RECT[2] and MODAL_RECT[1] <= y <= MODAL_RECT[3]):
+                    cancelar_modal()
+                    return
         return
 
     # Se nenhuma imagem foi aberta ainda, permite apenas interação com HUD
@@ -940,7 +959,10 @@ def callback_mouse(event, x, y, flags, param):
         # Clique no HUD
         if y <= HUD_HEIGHT:
             if BTN_OPEN_IMAGE[0] <= x <= BTN_OPEN_IMAGE[2] and BTN_OPEN_IMAGE[1] <= y <= BTN_OPEN_IMAGE[3]:
-                acao_selecionar_imagem_usuario()
+                solicitacao_abrir_imagem = True
+                status_mensagem = "Abrindo seletor de arquivos..."
+                status_cor = (250, 204, 21)
+                atualizar_canvas()
                 return
             elif BTN_HAND_PAN[0] <= x <= BTN_HAND_PAN[2] and BTN_HAND_PAN[1] <= y <= BTN_HAND_PAN[3]:
                 alternar_modo_mao()
@@ -961,7 +983,7 @@ def callback_mouse(event, x, y, flags, param):
                 salvar_checkpoint()
                 return
             elif BTN_FINISH[0] <= x <= BTN_FINISH[2] and BTN_FINISH[1] <= y <= BTN_FINISH[3]:
-                print("[*] Botão 'Finalizar' acionado.")
+                print("[*] Botão 'Finalizar/Sair' acionado.")
                 if img_base is None:
                     deve_encerrar = True
                 else:
@@ -1122,8 +1144,6 @@ def main():
     caminho_img = None
     if args.imagem:
         caminho_img = selecionar_imagem(args.imagem, args.input_dir)
-    else:
-        caminho_img = selecionar_imagem(None, args.input_dir)
 
     if caminho_img is not None and caminho_img.exists():
         carregar_imagem_no_app(caminho_img, args.saida, salvar_atual=False)
@@ -1173,6 +1193,11 @@ def main():
     step_pan = 60
 
     while not deve_encerrar:
+        # Processa solicitação de abertura de imagem (disparada pelo botão no header)
+        if solicitacao_abrir_imagem:
+            solicitacao_abrir_imagem = False
+            acao_selecionar_imagem_usuario()
+
         # Sincroniza dinamicamente resolução se houver redimensionamento de janela
         try:
             wrect = cv2.getWindowImageRect(WINDOW_NAME)
@@ -1197,8 +1222,8 @@ def main():
             if raw_key in (10, 13) or key in (ord("s"), ord("S")):
                 fechar_modal_e_finalizar(salvar=True)
                 break
-            # D ou X: Sair sem salvar (se houver alterações pendentes)
-            elif alteracoes_pendentes and key in (ord("d"), ord("D"), ord("x"), ord("X")):
+            # D ou X: Sair sem salvar / Sair do App
+            elif key in (ord("d"), ord("D"), ord("x"), ord("X")):
                 fechar_modal_e_finalizar(salvar=False)
                 break
             # ESC ou C: Cancelar modal e voltar a anotar

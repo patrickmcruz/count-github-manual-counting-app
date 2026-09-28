@@ -58,13 +58,13 @@ def test_rastreamento_alteracoes_e_modal():
     app.salvar_checkpoint(silencioso=True)
     assert app.alteracoes_pendentes is False, "alteracoes_pendentes deveria ser False após salvar_checkpoint"
 
-    # 4. Renderização do modal com tudo salvo (deve gerar 2 botões)
+    # 4. Renderização do modal com tudo salvo (agora gera 3 botões com Sair do App)
     print("  [+] Testando renderização do modal com tudo salvo...")
     app.desenhar_modal_confirmacao(test_canvas)
     assert app.BTN_MODAL_CONFIRMAR_SALVAR != (0, 0, 0, 0), "Botão Confirmar Salvar deve estar configurado"
-    assert app.BTN_MODAL_SAIR_SEM_SALVAR == (0, 0, 0, 0), "Botão Sair sem Salvar NÃO deve estar ativo quando tudo estiver salvo"
+    assert app.BTN_MODAL_SAIR_SEM_SALVAR != (0, 0, 0, 0), "Botão Sair do App deve estar ativo quando tudo estiver salvo"
     assert app.BTN_MODAL_CANCELAR != (0, 0, 0, 0), "Botão Cancelar deve estar configurado"
-    print(f"      Botões gerados (2 opções): Confirmar={app.BTN_MODAL_CONFIRMAR_SALVAR}, Cancelar={app.BTN_MODAL_CANCELAR}")
+    print(f"      Botões gerados (3 opções): Confirmar={app.BTN_MODAL_CONFIRMAR_SALVAR}, Sair do App={app.BTN_MODAL_SAIR_SEM_SALVAR}, Cancelar={app.BTN_MODAL_CANCELAR}")
 
     # 5. Desfazer ponto deve reativar alteracoes_pendentes
     print("  [+] Testando desfazer_ultimo_ponto()...")

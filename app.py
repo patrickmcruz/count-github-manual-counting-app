@@ -77,7 +77,7 @@ status_cor = (203, 213, 225)
 caminho_img_ativo = None
 caminho_saida_ativo = None
 
-WINDOW_NAME = "Anotador de Multidoes (Ground Truth)"
+WINDOW_NAME = "Contagem de Multidoes (Ground Truth)"
 
 # Estado de Salvamento e Confirmação de Saída
 alteracoes_pendentes = False
@@ -547,7 +547,7 @@ def atualizar_canvas():
         cv2.rectangle(img_display, (0, 0), (w, HUD_HEIGHT), (15, 23, 42), -1)
         cv2.line(img_display, (0, HUD_HEIGHT), (w, HUD_HEIGHT), (56, 189, 248), 2)
 
-        cv2.putText(img_display, "Anotador de Multidoes", (16, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.70, (148, 163, 184), 2, cv2.LINE_AA)
+        cv2.putText(img_display, "Contagem de Multidoes", (16, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.70, (148, 163, 184), 2, cv2.LINE_AA)
         cv2.putText(img_display, status_mensagem, (320, 31), cv2.FONT_HERSHEY_SIMPLEX, 0.48, status_cor, 1, cv2.LINE_AA)
 
         # Botão: Abrir Imagem (O)
@@ -577,7 +577,7 @@ def atualizar_canvas():
         cv2.putText(img_display, "X Sair", (ex_x1 + 35, ex_y1 + 23), cv2.FONT_HERSHEY_SIMPLEX, 0.50, (255, 255, 255), 2, cv2.LINE_AA)
 
         # Mensagem central
-        cv2.putText(img_display, "ANOTADOR DE MULTIDOES - IPPUC / RGBTCC", (w // 2 - 320, screen_h // 2 - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.85, (255, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(img_display, "CONTAGEM DE MULTIDOES - IPPUC / RGBTCC", (w // 2 - 320, screen_h // 2 - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.85, (255, 255, 255), 2, cv2.LINE_AA)
         cv2.putText(img_display, "Nenhuma imagem selecionada no momento.", (w // 2 - 220, screen_h // 2 + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (148, 163, 184), 1, cv2.LINE_AA)
         cv2.putText(img_display, "Clique no botao [ Abrir (O) ] acima para escolher uma foto no seu computador.", (w // 2 - 380, screen_h // 2 + 50), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (56, 189, 248), 1, cv2.LINE_AA)
 
@@ -1166,7 +1166,7 @@ def main():
         atualizar_canvas()
 
     print("\n" + "=" * 76)
-    print("   ANOTADOR INICIADO EM ALTA RESOLUÇÃO COM ZOOM E PAN")
+    print("   CONTAGEM DE MULTIDÕES INICIADA EM ALTA RESOLUÇÃO COM ZOOM E PAN")
     print("=" * 76)
     print("  • BOTÃO [Abrir (O)]:      Escolher/abrir qualquer imagem do computador")
     print("  • BOTÃO [Mão (H)]:        Mover câmera livremente com clique esquerdo (sem marcar)")

@@ -2,7 +2,7 @@
 set -e
 
 echo "=============================================================="
-echo "   ANOTADOR MANUAL DE MULTIDÕES - IPPUC / RGBTCC"
+echo "   CONTAGEM MANUAL DE MULTIDÕES - IPPUC / RGBTCC"
 echo "=============================================================="
 echo ""
 
@@ -27,5 +27,5 @@ if [ ! -f ".venv/bin/python" ]; then
     echo "[✓] Ambiente configurado com sucesso!"
 fi
 
-echo "[*] Iniciando o Anotador..."
+echo "[*] Iniciando a Contagem de Multidões..."
 .venv/bin/python app.py "$@"

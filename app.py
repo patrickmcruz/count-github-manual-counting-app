@@ -36,8 +36,12 @@ import cv2
 import numpy as np
 import pandas as pd
 
-# Resolução de diretórios do aplicativo
-APP_ROOT = Path(__file__).resolve().parent
+# Resolução de diretórios do aplicativo (compatível com script Python e executável PyInstaller)
+if getattr(sys, "frozen", False):
+    APP_ROOT = Path(sys.executable).resolve().parent
+else:
+    APP_ROOT = Path(__file__).resolve().parent
+
 DEFAULT_INPUT_DIR = APP_ROOT / "data" / "input"
 DEFAULT_OUTPUT_DIR = APP_ROOT / "data" / "ground_truth"
 

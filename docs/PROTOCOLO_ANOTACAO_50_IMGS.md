@@ -22,9 +22,9 @@ As 50 imagens podem ser distribuídas em lotes equilibrados (exemplo: 5 lotes de
 
 1. **Preparação do Pacote para os Anotadores:**
    - **Opção A (Recomendada - Executável .exe Portável):**  
-     O coordenador executa `build_executavel_windows.bat` para gerar o `ContagemMultidoes.exe` em `dist\`. Em seguida, copia as fotos atribuídas ao colega para `dist\data\input\`, compacta a pasta `dist` como `Lote_XX.zip` e envia. **O colega não precisa instalar o Python nem configurar nada.**
-   - **Opção B (Via Script e Python Instalado):**  
-     O coordenador cria uma cópia zipada do repositório `count-github-manual-counting-app`, coloca as fotos em `data/input/` e envia. O colega inicia pelo arquivo `iniciar_windows.bat` (requer Python instalado).
+     O coordenador executa `build_executavel_windows.bat` para gerar o `ContagemMultidoes.exe` em `dist\`. Em seguida, copia as fotos atribuídas ao colega para `dist\data\input\`, compacta a pasta `dist` como `Lote_XX.zip` e envia. **O colega não precisa instalar o Python nem configurar nada — basta abrir `ContagemMultidoes.exe`.**
+   - **Opção B (Via Script Linux — requer Python e Linux/macOS):**  
+     O coordenador cria uma cópia zipada do repositório `count-github-manual-counting-app`, coloca as fotos em `data/input/` e envia. O colega inicia pelo script `./iniciar_linux.sh` em um terminal Linux ou macOS.
 
 2. **Recepção dos Dados Anotados:**
    - O colega finaliza a contagem e envia a pasta `data/ground_truth/` gerada.

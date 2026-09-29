@@ -95,26 +95,58 @@ goto FINALIZAR_ESTRUTURA_AMBOS
 echo [*] Criando estrutura de pastas de dados em dist\...
 if exist "dist\data\ground_truth" rmdir /s /q "dist\data\ground_truth"
 if not exist "dist\data\ground_truth" mkdir "dist\data\ground_truth"
-> "dist\COMO_USAR.txt" echo INSTRUCOES DE USO DO APLICATIVO
->> "dist\COMO_USAR.txt" echo ==============================
->> "dist\COMO_USAR.txt" echo 1. Execute ContagemMultidoes.exe.
->> "dist\COMO_USAR.txt" echo 2. Clique no botão para selecionar suas fotos JPG ou PNG.
->> "dist\COMO_USAR.txt" echo 3. Clique na cabeça de cada pessoa encontrada, se não tiver cabeça clique na parte visível.
->> "dist\COMO_USAR.txt" echo 4. Salve regularmente a contagem no botão "Salvar".
->> "dist\COMO_USAR.txt" echo 5. Os relatorios serao gerados em data\ground_truth.
+> "dist\COMO_USAR.txt" echo INSTRUCOES DE USO - CONTAGEM MANUAL DE MULTIDOES
+>> "dist\COMO_USAR.txt" echo ==================================================
+>> "dist\COMO_USAR.txt" echo.
+>> "dist\COMO_USAR.txt" echo COMO INICIAR
+>> "dist\COMO_USAR.txt" echo   De duplo clique em: ContagemMultidoes.exe
+>> "dist\COMO_USAR.txt" echo.
+>> "dist\COMO_USAR.txt" echo AVISO DO WINDOWS SMARTSCREEN (tela azul)
+>> "dist\COMO_USAR.txt" echo   Se aparecer "O Windows protegeu o seu computador":
+>> "dist\COMO_USAR.txt" echo   1. Clique em "Mais informacoes"
+>> "dist\COMO_USAR.txt" echo   2. Clique em "Executar assim mesmo"
+>> "dist\COMO_USAR.txt" echo   (Confirmacao necessaria apenas na primeira abertura)
+>> "dist\COMO_USAR.txt" echo.
+>> "dist\COMO_USAR.txt" echo COMO ANOTAR
+>> "dist\COMO_USAR.txt" echo   1. O aplicativo abre em modo de espera (Standby).
+>> "dist\COMO_USAR.txt" echo   2. Clique em [ Abrir (O) ] para selecionar uma foto JPG ou PNG.
+>> "dist\COMO_USAR.txt" echo   3. Clique no centro da cabeca de cada pessoa visivel.
+>> "dist\COMO_USAR.txt" echo   4. Use a roda do mouse para aplicar Zoom In/Out.
+>> "dist\COMO_USAR.txt" echo   5. Ative a Ferramenta Mao (H) para navegar sem marcar pontos.
+>> "dist\COMO_USAR.txt" echo   6. Pressione Ctrl+S regularmente para salvar o progresso.
+>> "dist\COMO_USAR.txt" echo   7. Ao concluir, clique em [ Finalizar ] para gerar os relatorios.
+>> "dist\COMO_USAR.txt" echo.
+>> "dist\COMO_USAR.txt" echo ONDE FICAM OS RESULTADOS
+>> "dist\COMO_USAR.txt" echo   data\ground_truth\^<nome_da_imagem^>\
 goto SUCESSO
 
 :FINALIZAR_ESTRUTURA_ONEDIR
 echo [*] Criando estrutura de pastas de dados em dist\ContagemMultidoes\...
 if exist "dist\ContagemMultidoes\data\ground_truth" rmdir /s /q "dist\ContagemMultidoes\data\ground_truth"
 if not exist "dist\ContagemMultidoes\data\ground_truth" mkdir "dist\ContagemMultidoes\data\ground_truth"
-> "dist\ContagemMultidoes\COMO_USAR.txt" echo INSTRUCOES DE USO DO APLICATIVO
->> "dist\ContagemMultidoes\COMO_USAR.txt" echo ==============================
->> "dist\ContagemMultidoes\COMO_USAR.txt" echo 1. Execute ContagemMultidoes.exe.
->> "dist\ContagemMultidoes\COMO_USAR.txt" echo 2. Clique no botão para selecionar suas fotos JPG ou PNG.
->> "dist\ContagemMultidoes\COMO_USAR.txt" echo 3. Clique na cabeça de cada pessoa encontrada, se não tiver cabeça clique na parte visível.
->> "dist\ContagemMultidoes\COMO_USAR.txt" echo 4. Salve regularmente a contagem no botão "Salvar".
->> "dist\ContagemMultidoes\COMO_USAR.txt" echo 5. Os relatorios serao gerados em data\ground_truth.
+> "dist\ContagemMultidoes\COMO_USAR.txt" echo INSTRUCOES DE USO - CONTAGEM MANUAL DE MULTIDOES
+>> "dist\ContagemMultidoes\COMO_USAR.txt" echo ==================================================
+>> "dist\ContagemMultidoes\COMO_USAR.txt" echo.
+>> "dist\ContagemMultidoes\COMO_USAR.txt" echo COMO INICIAR
+>> "dist\ContagemMultidoes\COMO_USAR.txt" echo   De duplo clique em: ContagemMultidoes.exe
+>> "dist\ContagemMultidoes\COMO_USAR.txt" echo.
+>> "dist\ContagemMultidoes\COMO_USAR.txt" echo AVISO DO WINDOWS SMARTSCREEN (tela azul)
+>> "dist\ContagemMultidoes\COMO_USAR.txt" echo   Se aparecer "O Windows protegeu o seu computador":
+>> "dist\ContagemMultidoes\COMO_USAR.txt" echo   1. Clique em "Mais informacoes"
+>> "dist\ContagemMultidoes\COMO_USAR.txt" echo   2. Clique em "Executar assim mesmo"
+>> "dist\ContagemMultidoes\COMO_USAR.txt" echo   (Confirmacao necessaria apenas na primeira abertura)
+>> "dist\ContagemMultidoes\COMO_USAR.txt" echo.
+>> "dist\ContagemMultidoes\COMO_USAR.txt" echo COMO ANOTAR
+>> "dist\ContagemMultidoes\COMO_USAR.txt" echo   1. O aplicativo abre em modo de espera (Standby).
+>> "dist\ContagemMultidoes\COMO_USAR.txt" echo   2. Clique em [ Abrir (O) ] para selecionar uma foto JPG ou PNG.
+>> "dist\ContagemMultidoes\COMO_USAR.txt" echo   3. Clique no centro da cabeca de cada pessoa visivel.
+>> "dist\ContagemMultidoes\COMO_USAR.txt" echo   4. Use a roda do mouse para aplicar Zoom In/Out.
+>> "dist\ContagemMultidoes\COMO_USAR.txt" echo   5. Ative a Ferramenta Mao (H) para navegar sem marcar pontos.
+>> "dist\ContagemMultidoes\COMO_USAR.txt" echo   6. Pressione Ctrl+S regularmente para salvar o progresso.
+>> "dist\ContagemMultidoes\COMO_USAR.txt" echo   7. Ao concluir, clique em [ Finalizar ] para gerar os relatorios.
+>> "dist\ContagemMultidoes\COMO_USAR.txt" echo.
+>> "dist\ContagemMultidoes\COMO_USAR.txt" echo ONDE FICAM OS RESULTADOS
+>> "dist\ContagemMultidoes\COMO_USAR.txt" echo   data\ground_truth\^<nome_da_imagem^>\
 goto SUCESSO
 
 :FINALIZAR_ESTRUTURA_AMBOS
@@ -122,13 +154,29 @@ if exist "dist\data\ground_truth" rmdir /s /q "dist\data\ground_truth"
 if exist "dist\ContagemMultidoes_Pasta\data\ground_truth" rmdir /s /q "dist\ContagemMultidoes_Pasta\data\ground_truth"
 if not exist "dist\data\ground_truth" mkdir "dist\data\ground_truth"
 if not exist "dist\ContagemMultidoes_Pasta\data\ground_truth" mkdir "dist\ContagemMultidoes_Pasta\data\ground_truth"
-> "dist\COMO_USAR.txt" echo INSTRUCOES DE USO DO APLICATIVO
->> "dist\COMO_USAR.txt" echo ==============================
->> "dist\COMO_USAR.txt" echo 1. Execute ContagemMultidoes.exe.
->> "dist\COMO_USAR.txt" echo 2. Clique no botão para selecionar suas fotos JPG ou PNG.
->> "dist\COMO_USAR.txt" echo 3. Clique na cabeça de cada pessoa encontrada, se não tiver cabeça clique na parte visível.
->> "dist\COMO_USAR.txt" echo 4. Salve regularmente a contagem no botão "Salvar".
->> "dist\COMO_USAR.txt" echo 5. Os relatorios serao gerados em data\ground_truth.
+> "dist\COMO_USAR.txt" echo INSTRUCOES DE USO - CONTAGEM MANUAL DE MULTIDOES
+>> "dist\COMO_USAR.txt" echo ==================================================
+>> "dist\COMO_USAR.txt" echo.
+>> "dist\COMO_USAR.txt" echo COMO INICIAR
+>> "dist\COMO_USAR.txt" echo   De duplo clique em: ContagemMultidoes.exe
+>> "dist\COMO_USAR.txt" echo.
+>> "dist\COMO_USAR.txt" echo AVISO DO WINDOWS SMARTSCREEN (tela azul)
+>> "dist\COMO_USAR.txt" echo   Se aparecer "O Windows protegeu o seu computador":
+>> "dist\COMO_USAR.txt" echo   1. Clique em "Mais informacoes"
+>> "dist\COMO_USAR.txt" echo   2. Clique em "Executar assim mesmo"
+>> "dist\COMO_USAR.txt" echo   (Confirmacao necessaria apenas na primeira abertura)
+>> "dist\COMO_USAR.txt" echo.
+>> "dist\COMO_USAR.txt" echo COMO ANOTAR
+>> "dist\COMO_USAR.txt" echo   1. O aplicativo abre em modo de espera (Standby).
+>> "dist\COMO_USAR.txt" echo   2. Clique em [ Abrir (O) ] para selecionar uma foto JPG ou PNG.
+>> "dist\COMO_USAR.txt" echo   3. Clique no centro da cabeca de cada pessoa visivel.
+>> "dist\COMO_USAR.txt" echo   4. Use a roda do mouse para aplicar Zoom In/Out.
+>> "dist\COMO_USAR.txt" echo   5. Ative a Ferramenta Mao (H) para navegar sem marcar pontos.
+>> "dist\COMO_USAR.txt" echo   6. Pressione Ctrl+S regularmente para salvar o progresso.
+>> "dist\COMO_USAR.txt" echo   7. Ao concluir, clique em [ Finalizar ] para gerar os relatorios.
+>> "dist\COMO_USAR.txt" echo.
+>> "dist\COMO_USAR.txt" echo ONDE FICAM OS RESULTADOS
+>> "dist\COMO_USAR.txt" echo   data\ground_truth\^<nome_da_imagem^>\
 copy /y "dist\COMO_USAR.txt" "dist\ContagemMultidoes_Pasta\COMO_USAR.txt" >nul
 goto SUCESSO
 

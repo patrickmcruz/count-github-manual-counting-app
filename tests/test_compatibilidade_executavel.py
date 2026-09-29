@@ -12,6 +12,9 @@ sys.path.insert(0, str(REPO_ROOT))
 
 import app
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 
 def test_resolucao_app_root_script():
     print("[*] 1. Testando resolução de APP_ROOT em modo script Python...")
@@ -27,7 +30,7 @@ def test_resolucao_app_root_script():
 
 def test_resolucao_app_root_frozen():
     print("[*] 2. Testando resolução de APP_ROOT em modo binário congelado (sys.frozen)...")
-    fake_exe = Path("/opt/contagem/bin/ContagemMultidoes.exe")
+    fake_exe = Path("C:/opt/contagem/bin/ContagemMultidoes.exe")
     with patch.object(sys, "frozen", True, create=True), \
          patch.object(sys, "executable", str(fake_exe)):
         if getattr(sys, "frozen", False):
@@ -38,8 +41,8 @@ def test_resolucao_app_root_frozen():
         assert root == fake_exe.parent, f"APP_ROOT deveria ser o diretório do executável: {root}"
         input_dir = root / "data" / "input"
         output_dir = root / "data" / "ground_truth"
-        assert input_dir == Path("/opt/contagem/bin/data/input")
-        assert output_dir == Path("/opt/contagem/bin/data/ground_truth")
+        assert input_dir == Path("C:/opt/contagem/bin/data/input")
+        assert output_dir == Path("C:/opt/contagem/bin/data/ground_truth")
         print(f"      [✓] Modo Frozen (.exe): APP_ROOT = {root}")
         print(f"      [✓] Pastas relativas: input = {input_dir}, output = {output_dir}")
 

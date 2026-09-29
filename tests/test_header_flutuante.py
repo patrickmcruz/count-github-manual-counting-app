@@ -15,6 +15,9 @@ import numpy as np
 import cv2
 import app
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 
 def test_header_flutuante_overlay():
     print("[*] Iniciando teste do Header Flutuante Sobreposto (Fase 10)...")

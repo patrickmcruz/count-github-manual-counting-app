@@ -16,6 +16,9 @@ import numpy as np
 import cv2
 import app
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 
 def test_modo_mao_e_prevencao_contagem():
     print("[*] Iniciando teste do Modo Mão / Pan e prevenção de contagem acidental...")

@@ -51,14 +51,21 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-Também existem scripts de inicialização que automatizam a criação do ambiente e a instalação das dependências:
+## Modos de Execução da Aplicação
 
-- Windows: `iniciar_windows.bat`;
-- Linux/macOS: `iniciar_linux.sh`.
+### 1. Para Usuário Final (Produção / Anotação)
 
-## Executar durante o desenvolvimento
+Para o usuário final, **não existem outros meios de início de aplicação que não sejam estes**:
 
-Execução padrão, iniciando em standby:
+- **Ambientes Linux:** executar `./iniciar_linux.sh`
+- **Ambientes Windows:** executar `dist/ContagemMultidoes.exe`
+
+> [!IMPORTANT]
+> Em ambientes Windows de produção/anotação, o executável em `dist/ContagemMultidoes.exe` é o único ponto de entrada do usuário final (sem necessidade de Python). Em ambientes Linux, a execução é realizada via `./iniciar_linux.sh`.
+
+### 2. Para Desenvolvimento e Testes
+
+Execução padrão via código-fonte, iniciando em standby:
 
 ```powershell
 .venv\Scripts\python.exe app.py
@@ -95,14 +102,15 @@ Exemplo:
 .
 ├── app.py                         # aplicação e estado da interface
 ├── requirements.txt               # dependências de execução
-├── iniciar_windows.bat            # inicialização local no Windows
-├── iniciar_linux.sh               # inicialização local no Linux/macOS
+├── iniciar_linux.sh               # inicialização oficial no Linux/macOS
 ├── build_executavel_windows.bat   # build do pacote Windows com PyInstaller
 ├── ContagemMultidoes.spec         # configuração manual/referência do PyInstaller
 ├── data/
 │   ├── input/                     # imagens de trabalho no ambiente de desenvolvimento
 │   └── ground_truth/              # checkpoints e resultados locais
-├── dist/                          # artefatos gerados para distribuição
+├── dist/
+│   ├── ContagemMultidoes.exe      # executável oficial de produção no Windows
+│   └── COMO_USAR.txt              # instruções rápidas de uso no Windows
 ├── build/                         # arquivos temporários do PyInstaller
 ├── tests/                         # testes executáveis de regressão
 └── docs/                          # documentação técnica e operacional

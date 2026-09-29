@@ -4,6 +4,21 @@ Este guia visa padronizar os critérios de anotação de multidões entre todos 
 
 ---
 
+## 0. Como Iniciar o Aplicativo
+
+Para o usuário final, **os únicos meios de início são**:
+
+| Ambiente | Como Iniciar |
+| :--- | :--- |
+| **Linux / macOS** | Abra um terminal na pasta do projeto e execute: `./iniciar_linux.sh` |
+| **Windows** | Dê duplo clique em `dist/ContagemMultidoes.exe` |
+
+> **Importante:** Não é necessário ter Python instalado no Windows. O executável `.exe` é autossuficiente.  
+> Em caso de alerta do Windows SmartScreen ("O Windows protegeu o seu computador"), clique em **"Mais informações"** e depois em **"Executar assim mesmo"**. Essa confirmação só ocorre na primeira abertura.
+
+---
+
+
 ## 1. Critérios de Marcação de Cabeças
 
 ### Onde clicar?

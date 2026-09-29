@@ -18,6 +18,9 @@ import cv2
 # Importa o módulo app
 import app
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 
 def test_rastreamento_alteracoes_e_modal():
     print("[*] Iniciando teste do modal de confirmação e rastreamento de alterações pendentes...")
